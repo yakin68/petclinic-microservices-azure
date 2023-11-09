@@ -42,10 +42,12 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 
 # install python 3
-sudo apt-get install python3-pip python3-devel -y
+sudo apt-get install python3-dev -y
+sudo apt-get install python3-pip -y
+
 
 # install ansible
-pip install ansible
+pip install ansible -y
 
 # install boto3
 pip install boto3 botocore
@@ -54,4 +56,6 @@ pip install boto3 botocore
 sudo apt install unzip
 sudo wget https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip
 sudo unzip terraform_1.4.6_linux_amd64.zip -d /usr/local/bin
+
+sudo git clone https://github.com/yakin68/petclinic-microservices-azure.git
 
