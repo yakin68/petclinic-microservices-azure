@@ -42,10 +42,12 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 
 # install python 3
-sudo apt-get install python3-pip python3-devel -y
+sudo apt-get install python3-dev -y
+sudo apt-get install python3-pip -y
+
 
 # install ansible
-pip install ansible
+pip install ansible -y
 
 # install boto3
 pip install boto3 botocore
