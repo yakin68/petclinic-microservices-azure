@@ -1395,11 +1395,13 @@ git push --set-upstream origin feature/msp-16
 echo $PATH
 whoami
 PATH="$PATH:/usr/local/bin"
+az version
+terraform -version
+ansible --version
 python3 --version
 pip3 --version
 ansible --version
-aws --version
-terraform --version
+
 ```
 
   * Click `Save`
