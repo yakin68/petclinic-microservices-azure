@@ -92,7 +92,7 @@ git clone https://github.com/clarusway/petclinic-microservices-with-db.git
 * Change your working directory to **petclinic-microservices** and delete the **.git** directory.
 
 ```bash
-cd petclinic-microservices-with-db
+cd petclinic-microservices-azure
 rm -rf .git
 ```
 
