@@ -1375,7 +1375,6 @@ git branch feature/msp-16
 git checkout feature/msp-16
 git push --set-upstream origin feature/msp-16
 ```
-
 - Create a ``Jenkins Job`` to test `bash` scripts creating QA Automation Infrastructure for `dev` manually.
 
 ```yml
@@ -1415,6 +1414,28 @@ AWS_REGION="us-east-1"
 aws ec2 create-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR} --query "KeyMaterial" --output text > ${ANS_KEYPAIR}
 chmod 400 ${ANS_KEYPAIR}
 ```
+#!/bin/bash
+
+# Azure için gerekli bilgileri belirle
+RESOURCE_GROUP="your-resource-group"
+KEY_PAIR_NAME="petclinic-ansible-test-dev"
+LOCATION="East US"
+
+# Azure'da SSH anahtar çifti oluştur
+az network ssh-key create --resource-group $RESOURCE_GROUP --name $KEY_PAIR_NAME --location $LOCATION --public-key-path ~/.ssh/id_rsa.pub
+
+# Oluşturulan özel anahtarı uygun bir dosyaya kaydet
+az network ssh-key show --resource-group $RESOURCE_GROUP --name $KEY_PAIR_NAME --query "privateKey" --output tsv > ${KEY_PAIR_NAME}.pem
+
+# Dosyanın izinlerini güvenli hale getir
+chmod 400 ${KEY_PAIR_NAME}.pem
+
+echo "Azure SSH Key Pair oluşturuldu ve kaydedildi."
+Bu betik, Azure CLI'yi kullanarak Azure'da bir SSH anahtar çifti oluşturur ve özel anahtarı belirtilen bir dosyaya kaydeder. Bu betiği çalıştırmadan önce, Azure CLI'nin yüklü olduğundan ve yapılandırıldığından emin olmalısınız. Ayrıca, Azure kaynak gruplarınızı ve konumlarınızı uygun şekilde değiştirmelisiniz.
+
+Azure CLI komutları ve seçenekleri hakkında daha fazla bilgi için Azure CLI belgelerini kontrol edebilirsiniz: Azure CLI belgeleri
+
+
   * Click `Save`
 
   * Click `Build Now`
@@ -1498,7 +1519,7 @@ compose:
   ansible_user: "'ubuntu'"
 ```
 
-- Commit the change, then push the cloudformation template to the remote repo.
+- Commit the change, then push the remote repo.
 
 ```bash
 git add .
@@ -1509,7 +1530,6 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to check the Ansible dynamic inventory for `dev` environment. (Click `Configure`)
 
 ```bash
-APP_NAME="Petclinic"
 ANS_KEYPAIR="petclinic-ansible-test-dev.key"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
@@ -1524,7 +1544,6 @@ ansible-inventory -v -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.
 
 ```bash
 # Test dev dynamic inventory by pinging
-APP_NAME="Petclinic"
 ANS_KEYPAIR="petclinic-ansible-test-dev.key"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
@@ -1544,11 +1563,6 @@ ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m p
 
   - name: change hostnames
     shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
-
-  - name: swap off
-    shell: |
-      free -m
-      swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
 
   - name: Enable the nodes to see bridged traffic
     shell: |
@@ -1575,10 +1589,10 @@ ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m p
 
   - name: update apt-get and install kube packages
     shell: |
-      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - && \
-      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+      curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
+      echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
       apt-get update -q && \
-      apt-get install -qy kubelet=1.26.3-00 kubectl=1.26.3-00 kubeadm=1.26.3-00 kubernetes-cni docker.io
+      apt-get install -qy kubelet=1.28.2-1.1 kubeadm=1.28.2-1.1 kubectl=1.28.2-1.1 kubernetes-cni docker.io
       apt-mark hold kubelet kubeadm kubectl
 
   - name: Add ubuntu to docker group
@@ -1673,7 +1687,6 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test the playbooks to create a Kubernetes cluster. (Click `Configure`)
 
 ```bash
-APP_NAME="Petclinic"
 ANS_KEYPAIR="petclinic-ansible-test-dev.key"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
@@ -1713,8 +1726,7 @@ rm -rf ${ANS_KEYPAIR}
 ```bash
 # Environment variables
 PATH="$PATH:/usr/local/bin"
-APP_NAME="Petclinic"
-ANS_KEYPAIR="petclinic-$APP_NAME-dev-${BUILD_NUMBER}.key"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
 AWS_REGION="us-east-1"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1813,6 +1825,7 @@ services:
       kompose.service.expose: "{{ .Values.DNS_NAME }}"
       kompose.service.type: "nodeport"
       kompose.service.nodeport.port: "30001"
+	  kompose.service.expose.ingress-class-name: "nginx"
   tracing-server:
     image: openzipkin/zipkin
     ports:
@@ -1854,7 +1867,7 @@ services:
 * Install [conversion tool](https://kompose.io/installation/) named `Kompose` on your Jenkins Server. [User Guide](https://kompose.io/user-guide/#user-guide)
 
 ```bash
-curl -L https://github.com/kubernetes/kompose/releases/download/v1.28.0/kompose-linux-amd64 -o kompose
+curl -L https://github.com/kubernetes/kompose/releases/download/v1.31.2/kompose-linux-amd64 -o kompose
 chmod +x kompose
 sudo mv ./kompose /usr/local/bin/kompose
 kompose version
@@ -1863,7 +1876,7 @@ kompose version
 * Install Helm [version 3+](https://github.com/helm/helm/releases) on Jenkins Server. [Introduction to Helm](https://helm.sh/docs/intro/). [Helm Installation](https://helm.sh/docs/intro/install/).
 
 ```bash
-curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 helm version
 ```
 
