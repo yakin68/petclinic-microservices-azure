@@ -1436,12 +1436,12 @@ ssh-copy-id -i ~/${ANS_KEYPAIR}.pub azureuser@137.116.226.216
 ANS_KEYPAIR="azurkey"
 
 cd infrastructure/dev-k8s-terraform
-sed -i "s/azurkey.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
+sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
 
 ssh-keygen -m PEM -t rsa -b 2048 -f ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
 terraform init
 terraform apply -var-file="variables.tfvars" -auto-approve -no-color
-```/home/azureuser/.ssh
+``
   * Click `Save`
 
   * Click `Build Now`
@@ -1450,11 +1450,12 @@ terraform apply -var-file="variables.tfvars" -auto-approve -no-color
 
 ```bash
 ANS_KEYPAIR="azurkeytest"
+# test item değiştirmeyi unutma
 cd ~/workspace/test/infrastructure/keys/
-ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub ubuntu@4.245.251.9
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR} asureuser@4.245.251.9 hostname
+ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@4.245.251.9
 
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${WORKSPACE}/test/infrastructure/keys/${ANS_KEYPAIR} azureuser@4.245.251.9 hostname
+cd ~/workspace/test/infrastructure/keys/
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@4.245.251.9 hostname
 
 ```
   * Click `Save`
