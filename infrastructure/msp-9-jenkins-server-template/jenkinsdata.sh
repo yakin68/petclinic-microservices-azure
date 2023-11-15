@@ -57,5 +57,20 @@ sudo apt install unzip
 sudo wget https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip
 sudo unzip terraform_1.4.6_linux_amd64.zip -d /usr/local/bin
 
+# az-cli install 
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+# kompose install
+sudo curl -L https://github.com/kubernetes/kompose/releases/download/v1.31.2/kompose-linux-amd64 -o kompose
+sudo chmod +x kompose
+sudo mv ./kompose /usr/local/bin/kompose
+
+# helm install and plugin
+sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+sudo helm plugin install https://github.com/hypnoglow/helm-s3.git
+
+
+cd /home/azureuzer
 sudo git clone https://github.com/yakin68/petclinic-microservices-azure.git
+
 

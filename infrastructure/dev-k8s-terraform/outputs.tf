@@ -1,4 +1,3 @@
-
 output "public_ip_address-kube-master" {
   description = "public ip of the kube-master."
   value       = azurerm_public_ip.kube-master-public-ip.ip_address
