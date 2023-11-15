@@ -1438,9 +1438,7 @@ ANS_KEYPAIR="azurkey"
 cd infrastructure/dev-k8s-terraform
 sed -i "s/azurkey.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
 
-cd infrastructure/key
-ssh-keygen -m PEM -t rsa -b 2048 -f ~/${ANS_KEYPAIR}
-chmod 400 ${ANS_KEYPAIR}
+ssh-keygen -m PEM -t rsa -b 2048 -f ~/workspace/test/infrastructure/keys${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
 
 terraform init
 terraform apply -var-file="variables.tfvars" -auto-approve -no-color

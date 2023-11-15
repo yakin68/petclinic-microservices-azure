@@ -12,7 +12,7 @@ resource "azurerm_linux_virtual_machine" "kube-master" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/infrastructure/dev-k8s-terraform/azurkey.pub") # SSH anahtarınızın dosya yolunu güncelleyin
+    public_key = file("~/workspace/test/infrastructure/keys/azurkey.pub") # SSH anahtarınızın dosya yolunu güncelleyin
   }
 
   os_disk {
