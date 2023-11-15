@@ -1438,8 +1438,7 @@ ANS_KEYPAIR="azurkey"
 cd infrastructure/dev-k8s-terraform
 sed -i "s/azurkey.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
 
-ssh-keygen -m PEM -t rsa -b 2048 -f ~/workspace/test/infrastructure/keys${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
-
+ssh-keygen -m PEM -t rsa -b 2048 -f ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
 terraform init
 terraform apply -var-file="variables.tfvars" -auto-approve -no-color
 ```/home/azureuser/.ssh
@@ -1450,9 +1449,13 @@ terraform apply -var-file="variables.tfvars" -auto-approve -no-color
 - After running the job above, replace the script with the one below in order to test SSH connection with one of the instances.(Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkey"
-ssh-copy-id -i ~/${ANS_KEYPAIR}.pub ubuntu@172.31.91.243 hostname
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${WORKSPACE}/${ANS_KEYPAIR} ubuntu@172.31.91.243 hostname
+ANS_KEYPAIR="azurkeytest"
+cd ~/workspace/test/infrastructure/keys/
+ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub ubuntu@4.245.251.9
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR} asureuser@4.245.251.9 hostname
+
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${WORKSPACE}/test/infrastructure/keys/${ANS_KEYPAIR} azureuser@4.245.251.9 hostname
+
 ```
   * Click `Save`
 
