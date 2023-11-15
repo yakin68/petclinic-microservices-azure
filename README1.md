@@ -1075,31 +1075,27 @@ git checkout feature/msp-14
       Command:
 ```
 ```bash
-PATH="$PATH:/usr/local/bin"
-APP_REPO_NAME="clarusway-repo/petclinic-app-dev"
-AWS_REGION="us-east-1"
+ACR_NAME="claruswayrepopetclinicappdev"  # Azure Container Registry adını buraya ekleyin
+ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre güncelleyin
+ACR_REGION="northeurope"  # Azure bölgesini buraya ekleyin
 
-aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
-aws ecr create-repository \
---repository-name ${APP_REPO_NAME} \
---image-scanning-configuration scanOnPush=false \
---image-tag-mutability MUTABLE \
---region ${AWS_REGION}
+# Azure Container Registry kontrol et
+az acr show --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP || \
+az acr create --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP --sku Basic --location $ACR_REGION
+
 ```
 
 * Prepare a script to create Docker Registry for `dev` on AWS ECR and save it as `create-ecr-docker-registry-for-dev.sh` under `infrastructure` folder.
 
 ``` bash
-PATH="$PATH:/usr/local/bin"
-APP_REPO_NAME="clarusway-repo/petclinic-app-dev"
-AWS_REGION="us-east-1"
+ACR_NAME="claruswayrepopetclinicappdev"  # Azure Container Registry adını buraya ekleyin
+ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre güncelleyin
+ACR_REGION="northeurope"  # Azure bölgesini buraya ekleyin
 
-aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
-aws ecr create-repository \
---repository-name ${APP_REPO_NAME} \
---image-scanning-configuration scanOnPush=false \
---image-tag-mutability MUTABLE \
---region ${AWS_REGION}
+# Azure Container Registry kontrol et
+az acr show --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP || \
+az acr create --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP --sku Basic --location $ACR_REGION
+
 ```
 
 * Commit the change, then push the script to the remote repo.
@@ -1397,7 +1393,6 @@ PATH="$PATH:/usr/local/bin"
 python3 --version
 pip3 --version
 ansible --version
-aws --version
 terraform --version
 ```
 
@@ -1408,49 +1403,46 @@ terraform --version
 - After running the job above, replace the script with the one below in order to test creating key pair for `ansible`. (Click `Configure`)
 
 ```bash
-PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
-AWS_REGION="us-east-1"
-aws ec2 create-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR} --query "KeyMaterial" --output text > ${ANS_KEYPAIR}
+az login
+ANS_KEYPAIR="azurkey"
+AWS_REGION="northeurope"
+AZ_RG="mysshkey"
+cd infrastructure/keys/
+ssh-keygen -m PEM -t rsa -b 2048 -f ~/${ANS_KEYPAIR}
+# az sshkey create --location ${AWS_REGION} --resource-group ${AZ_RG} --name ${ANS_KEYPAIR} | sed -n -e '/"publicKey":/ s/.*"\(ssh-rsa.*\)".*/\1/p' > ${ANS_KEYPAIR}
 chmod 400 ${ANS_KEYPAIR}
 ```
-#!/bin/bash
-
-# Azure için gerekli bilgileri belirle
-RESOURCE_GROUP="your-resource-group"
-KEY_PAIR_NAME="petclinic-ansible-test-dev"
-LOCATION="East US"
-
-# Azure'da SSH anahtar çifti oluştur
-az network ssh-key create --resource-group $RESOURCE_GROUP --name $KEY_PAIR_NAME --location $LOCATION --public-key-path ~/.ssh/id_rsa.pub
-
-# Oluşturulan özel anahtarı uygun bir dosyaya kaydet
-az network ssh-key show --resource-group $RESOURCE_GROUP --name $KEY_PAIR_NAME --query "privateKey" --output tsv > ${KEY_PAIR_NAME}.pem
-
-# Dosyanın izinlerini güvenli hale getir
-chmod 400 ${KEY_PAIR_NAME}.pem
-
-echo "Azure SSH Key Pair oluşturuldu ve kaydedildi."
-Bu betik, Azure CLI'yi kullanarak Azure'da bir SSH anahtar çifti oluşturur ve özel anahtarı belirtilen bir dosyaya kaydeder. Bu betiği çalıştırmadan önce, Azure CLI'nin yüklü olduğundan ve yapılandırıldığından emin olmalısınız. Ayrıca, Azure kaynak gruplarınızı ve konumlarınızı uygun şekilde değiştirmelisiniz.
-
-Azure CLI komutları ve seçenekleri hakkında daha fazla bilgi için Azure CLI belgelerini kontrol edebilirsiniz: Azure CLI belgeleri
-
 
   * Click `Save`
 
-  * Click `Build Now`
+  * Click `Build Now` 
+
+az login
+ANS_KEYPAIR="azurkey"
+chmod 400 ${ANS_KEYPAIR}
+ssh-copy-id -i ~/${ANS_KEYPAIR}.pub azureuser@137.116.226.216
+
+#!/bin/bash
+
+
+
+
+
 
 - After running the job above, replace the script with the one below in order to test creating kubernetes infrastructure with terraform. (Click `Configure`)
 
 ```bash
-PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
-AWS_REGION="us-east-1"
+
+ANS_KEYPAIR="azurkey"
+
 cd infrastructure/dev-k8s-terraform
-sed -i "s/clarus/$ANS_KEYPAIR/g" main.tf
+sed -i "s/azurkey.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
+ssh-keygen -m PEM -t rsa -b 2048 -f ~/${ANS_KEYPAIR}
+chmod 400 ${ANS_KEYPAIR}
+
 terraform init
-terraform apply -auto-approve -no-color
-```
+terraform apply -var-file="variables.tfvars" -auto-approve -no-color
+```/home/azureuser/.ssh
   * Click `Save`
 
   * Click `Build Now`
@@ -1458,7 +1450,8 @@ terraform apply -auto-approve -no-color
 - After running the job above, replace the script with the one below in order to test SSH connection with one of the instances.(Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
+ssh-copy-id -i ~/${ANS_KEYPAIR}.pub ubuntu@172.31.91.243 hostname
 ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${WORKSPACE}/${ANS_KEYPAIR} ubuntu@172.31.91.243 hostname
 ```
   * Click `Save`
@@ -1491,7 +1484,7 @@ git push --set-upstream origin feature/msp-16
 
 ```bash
 PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
 export ANSIBLE_INVENTORY="${WORKSPACE}/ansible/inventory/hosts.ini"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1530,7 +1523,7 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to check the Ansible dynamic inventory for `dev` environment. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1544,7 +1537,7 @@ ansible-inventory -v -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.
 
 ```bash
 # Test dev dynamic inventory by pinging
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1687,7 +1680,7 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test the playbooks to create a Kubernetes cluster. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1712,7 +1705,7 @@ terraform destroy -auto-approve -no-color
 
 ```bash
 PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
 AWS_REGION="us-east-1"
 aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
@@ -1726,7 +1719,7 @@ rm -rf ${ANS_KEYPAIR}
 ```bash
 # Environment variables
 PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ANS_KEYPAIR="azurkey"
 AWS_REGION="us-east-1"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False

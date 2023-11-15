@@ -8,7 +8,7 @@ resource "azurerm_linux_virtual_machine" "worker-1" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/.ssh/azurkey.pub") # SSH anahtarınızın dosya yolunu güncelleyin
+    public_key = file("/home/azureuser/.ssh/azurkey.pub") # SSH anahtarınızın dosya yolunu güncelleyin
   }
 
   os_disk {
@@ -53,10 +53,4 @@ resource "azurerm_public_ip" "worker-1-public-ip" {
   resource_group_name     = azurerm_resource_group.kube.name
   allocation_method       = "Dynamic"
   idle_timeout_in_minutes = 30
-}
-
-# Connect the security group to the network interface
-resource "azurerm_network_interface_security_group_association" "example" {
-  network_interface_id      = azurerm_network_interface.worker-1-nic.id
-  network_security_group_id = [azurerm_network_security_group.petclinic-kube-worker-sg.id, azurerm_network_security_group.petclinic-mutual-sg.id]
 }
