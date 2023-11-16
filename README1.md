@@ -1407,10 +1407,10 @@ az login
 ANS_KEYPAIR="azurkey"
 AWS_REGION="northeurope"
 AZ_RG="mysshkey"
-cd infrastructure/keys/
-ssh-keygen -m PEM -t rsa -b 2048 -f ~/${ANS_KEYPAIR}
+# cd infrastructure/keys/
+# ssh-keygen -m PEM -t rsa -b 2048 -f ~/${ANS_KEYPAIR}
 # az sshkey create --location ${AWS_REGION} --resource-group ${AZ_RG} --name ${ANS_KEYPAIR} | sed -n -e '/"publicKey":/ s/.*"\(ssh-rsa.*\)".*/\1/p' > ${ANS_KEYPAIR}
-chmod 400 ${ANS_KEYPAIR}
+# chmod 400 ${ANS_KEYPAIR}
 ```
 
   * Click `Save`
@@ -1450,12 +1450,12 @@ terraform apply -var-file="variables.tfvars" -auto-approve -no-color
 
 ```bash
 ANS_KEYPAIR="azurkeytest"
-# test item değiştirmeyi unutma
+# test item ve host adresi değiştirmeyi unutma
 cd ~/workspace/test/infrastructure/keys/
-ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@4.245.251.9
+ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@98.71.90.56
 
 cd ~/workspace/test/infrastructure/keys/
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@4.245.251.9 hostname
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@98.71.90.56 hostname
 
 ```
   * Click `Save`
