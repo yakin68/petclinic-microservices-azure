@@ -1,0 +1,20 @@
+plugin: azure.azcollection.azure_rm
+auth_source: cli
+include_vm_resource_groups:
+    - "project-kube-claster-worker"
+exclude_host_filters:
+    # excludes hosts in the eastus region
+    - location in ['northeurope']
+    - tags['Project'] is defined and tags['Project'] == 'tera-kube-ans'
+    - tags['environment'] is defined and tags['environment'] == 'dev'
+    # excludes hosts that are powered off
+    - powerstate != 'running'
+keyed_groups:
+    - prefix: 'all_instances'
+      key: tags['Project']
+    - prefix: 'role'
+      key: tags['Role']
+hostnames:
+    - "ip-address"
+compose:
+    ansible_user: "'azureuser'"

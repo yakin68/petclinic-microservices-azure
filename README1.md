@@ -1496,10 +1496,10 @@ export ANSIBLE_HOST_KEY_CHECKING=False
 ansible all -m ping
 ```
 
-- Prepare dynamic inventory file with name of `dev_stack_dynamic_inventory_aws_ec2.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
+- Prepare dynamic inventory file with name of 'myazuresub.azure_rm.yaml' eski dosya adı aws için `dev_stack_dynamic_inventory_aws_ec2.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
 
 ```yaml
-plugin: aws_ec2
+plugin: azure.azcollection.azure_rm
 regions:
   - "us-east-1"
 filters:
@@ -1514,7 +1514,7 @@ keyed_groups:
 hostnames:
   - "ip-address"
 compose:
-  ansible_user: "'ubuntu'"
+  ansible_user: "'azureuser'"
 ```
 
 - Commit the change, then push the remote repo.
