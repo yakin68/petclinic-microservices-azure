@@ -1404,7 +1404,7 @@ terraform --version
 
 ```bash
 az login
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 AWS_REGION="northeurope"
 AZ_RG="mysshkey"
 # cd infrastructure/keys/
@@ -1418,7 +1418,7 @@ AZ_RG="mysshkey"
   * Click `Build Now` 
 
 az login
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 chmod 400 ${ANS_KEYPAIR}
 ssh-copy-id -i ~/${ANS_KEYPAIR}.pub azureuser@137.116.226.216
 
@@ -1433,7 +1433,7 @@ ssh-copy-id -i ~/${ANS_KEYPAIR}.pub azureuser@137.116.226.216
 
 ```bash
 
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 
 cd infrastructure/dev-k8s-terraform
 sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
@@ -1528,11 +1528,10 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to check the Ansible dynamic inventory for `dev` environment. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkey"
-PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="azurkeytest"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible-inventory -v -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml --graph
+ansible-inventory -v -i ./ansible/inventory/myazuresub.azure_rm.yaml --graph
 ```
   * Click `Save`
 
@@ -1542,7 +1541,7 @@ ansible-inventory -v -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.
 
 ```bash
 # Test dev dynamic inventory by pinging
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1685,7 +1684,7 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test the playbooks to create a Kubernetes cluster. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
@@ -1710,7 +1709,7 @@ terraform destroy -auto-approve -no-color
 
 ```bash
 PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 AWS_REGION="us-east-1"
 aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
@@ -1724,7 +1723,7 @@ rm -rf ${ANS_KEYPAIR}
 ```bash
 # Environment variables
 PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 AWS_REGION="us-east-1"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
