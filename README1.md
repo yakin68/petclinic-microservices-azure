@@ -1516,7 +1516,10 @@ hostnames:
 compose:
   ansible_user: "'azureuser'"
 ```
-
+export AZURE_SUBSCRIPTION_ID="88bbc84a-2800-40f2-b985-be5418274086"
+export AZURE_CLIENT_ID="74197c47-694e-4f83-b6d2-4c2f82bf175b"
+export AZURE_SECRET="b966e1e6-0214-4797-b9a1-15845a62413c"
+export AZURE_TENANT="8388ef3f-c433-4ae9-8eff-e0cea679d269"
 - Commit the change, then push the remote repo.
 
 ```bash

@@ -1,6 +1,7 @@
-plugin: azure.azcollection.azure_rm
+plugin: azure_rm
 include_vm_resource_groups:
     - "project-kube-claster-worker"
+auth_source: credentials_file    
 exclude_host_filters:
     # excludes hosts in the eastus region
     - location in ['northeurope']
@@ -16,4 +17,4 @@ keyed_groups:
 # hostnames:
 #     - "ip-address"
 # compose:
-#     ansible_user: "'azureuser'"
+#     ansible_user: {"azureuser}
