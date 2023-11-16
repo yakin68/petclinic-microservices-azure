@@ -1457,6 +1457,8 @@ ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/
 cd ~/workspace/test/infrastructure/keys/
 ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@98.71.90.56 hostname
 
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@98.71.89.245 hostname
+
 ```
   * Click `Save`
 
@@ -1487,8 +1489,7 @@ git push --set-upstream origin feature/msp-16
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test ansible by pinging static hosts.
 
 ```bash
-PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="azurkey"
+ANS_KEYPAIR="azurkeytest"
 export ANSIBLE_INVENTORY="${WORKSPACE}/ansible/inventory/hosts.ini"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
