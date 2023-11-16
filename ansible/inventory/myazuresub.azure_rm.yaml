@@ -1,6 +1,7 @@
 plugin: azure.azcollection.azure_rm
 include_vm_resource_groups:
     - "project-kube-claster-worker"
+auth_source: cli    
 exclude_host_filters:
     # excludes hosts in the eastus region
     - location in ['northeurope']
