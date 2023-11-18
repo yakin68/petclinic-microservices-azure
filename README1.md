@@ -1,3 +1,8 @@
+  az login --service-principal -u <app-id> -p <client-secret> --tenant <tenant-id>
+
+    az login --service-principal -u 74197c47-694e-4f83-b6d2-4c2f82bf175b -p KrH8Q~5KCwxOV_UWRvFEq4evYJO2mSAQfCb-Obza --tenant 8388ef3f-c433-4ae9-8eff-e0cea679d269 
+    
+  az ad sp create-for-rbac --name ServicePrincipalName
 # Project 505: Microservices CI/CD Pipeline
 
 ## Description
@@ -1547,7 +1552,7 @@ ansible-inventory -v -i ./ansible/inventory/myazuresub.azure_rm.yaml --graph
 ```bash
 # Test dev dynamic inventory by pinging
 ANS_KEYPAIR="azurkeytest"
-petclinic-microservices-azure/infrastructure/keys
+
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 ansible -i ./ansible/inventory/myazuresub.azure_rm.yaml all -m ping

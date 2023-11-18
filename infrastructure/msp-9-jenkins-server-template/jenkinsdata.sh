@@ -1,5 +1,4 @@
 #! /bin/bash
-
 # update os
 sudo apt-get update
 
@@ -30,6 +29,8 @@ sudo systemctl start docker
 sudo systemctl enable docker
 sudo usermod -a -G docker azureuser
 sudo usermod -a -G docker jenkins
+# sudo usermod -a -G jenkins azureuser
+
 
 # configure docker as cloud agent for jenkins
 sudo cp /lib/systemd/system/docker.service /lib/systemd/system/docker.service.bak
