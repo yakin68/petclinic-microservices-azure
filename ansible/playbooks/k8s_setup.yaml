@@ -2,8 +2,8 @@
   become: true
   tasks:
 
-  - name: change hostnames
-    shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
+  # - name: change hostnames
+  #   shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname] }}"
 
   - name: Enable the nodes to see bridged traffic
     shell: |

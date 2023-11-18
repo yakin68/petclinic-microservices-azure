@@ -30,6 +30,7 @@ sudo systemctl enable docker
 sudo usermod -a -G docker azureuser
 sudo usermod -a -G docker jenkins
 # sudo usermod -a -G jenkins azureuser
+# sudo usermod -aG sudo jenkins
 
 
 # configure docker as cloud agent for jenkins
@@ -76,5 +77,6 @@ sudo ansible-galaxy collection install azure.azcollection
 
 cd /home/azureuzer
 sudo git clone https://github.com/yakin68/petclinic-microservices-azure.git
+
 
 

@@ -1477,9 +1477,9 @@ mkdir -p ansible/inventory
 - Prepare static inventory file with name of `hosts.ini` for Ansible under `ansible/inventory` folder using Docker machines private IP addresses.
 
 ```ini
-172.31.91.243   ansible_user=ubuntu  
-172.31.87.143   ansible_user=ubuntu
-172.31.90.30    ansible_user=ubuntu
+172.31.91.243   ansible_user=azureuser  
+172.31.87.143   ansible_user=azureuser
+172.31.90.30    ansible_user=azureuser
 ```
 
 - Commit the change, then push to the remote repo.
@@ -1609,7 +1609,7 @@ ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
       apt-get install -qy kubelet=1.28.2-1.1 kubeadm=1.28.2-1.1 kubectl=1.28.2-1.1 kubernetes-cni docker.io
       apt-mark hold kubelet kubeadm kubectl
 
-  - name: Add ubuntu to docker group
+  - name: Add azureuser to docker group
     user:
       name: azureuser
       group: docker
@@ -1648,16 +1648,16 @@ ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
     shell: |
       kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=All
     
-  - name: Setup kubeconfig for ubuntu user
+  - name: Setup kubeconfig for azureuser user
     become: true
     command: "{{ item }}"
     with_items:
-     - mkdir -p /home/ubuntu/.kube
-     - cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
-     - chown ubuntu:ubuntu /home/ubuntu/.kube/config
+     - mkdir -p /home/azureuser/.kube
+     - cp -i /etc/kubernetes/admin.conf /home/azureuser/.kube/config
+     - chown azureuser:azureuser /home/azureuser/.kube/config
 
   - name: Install flannel pod network
-    remote_user: ubuntu
+    remote_user: azureuser
     shell: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
 
   - name: Generate join command
@@ -1674,7 +1674,7 @@ ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
 
   - name: install Helm 
     shell: |
-      cd /home/ubuntu
+      cd /home/azureuser
       curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
       chmod 777 get_helm.sh
       ./get_helm.sh
@@ -1706,7 +1706,7 @@ PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # k8s setup
-ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
 ```
   * Click `Save`
 
@@ -2209,7 +2209,7 @@ aws ecr create-repository \
 
   - name: Create .docker folder
     file:
-      path: /home/ubuntu/.docker
+      path: /home/azureuser/.docker
       state: directory
       mode: '0755'
 
@@ -2217,7 +2217,7 @@ aws ecr create-repository \
     become: yes
     copy: 
       src: $JENKINS_HOME/.docker/config.json
-      dest: /home/ubuntu/.docker/config.json
+      dest: /home/azureuser/.docker/config.json
 
   - name: deploy petclinic application
     shell: |
@@ -2225,7 +2225,7 @@ aws ecr create-repository \
       kubectl create ns petclinic-dev
       kubectl delete secret regcred -n petclinic-dev || true
       kubectl create secret generic regcred -n petclinic-dev \
-        --from-file=.dockerconfigjson=/home/ubuntu/.docker/config.json \
+        --from-file=.dockerconfigjson=/home/azureuser/.docker/config.json \
         --type=kubernetes.io/dockerconfigjson
       AWS_REGION=$AWS_REGION helm repo add stable-petclinic s3://petclinic-helm-charts-<put-your-name>/stable/myapp/
       AWS_REGION=$AWS_REGION helm repo update
