@@ -1,20 +1,21 @@
 plugin: azure_rm
+auth_source: auto
 include_vm_resource_groups:
-    - "project-kube-claster-worker"
-auth_source: credentials_file    
+  - project-kube-claster-worker
+plain_host_names: true
 exclude_host_filters:
-    # excludes hosts in the eastus region
-    - location in ['northeurope']
-    - tags['Project'] is defined and tags['Project'] == 'tera-kube-ans'
-    - tags['environment'] is defined and tags['environment'] == 'dev'
-    # excludes hosts that are powered off
-    - powerstate != 'running'
+  - powerstate != 'running'
 keyed_groups:
-    - prefix: 'all_instances'
-      key: tags['Project']
-    - prefix: 'role'
-      key: tags['Role']
-# hostnames:
-#     - "ip-address"
-# compose:
-#     ansible_user: {"azureuser}
+  - key: tags.Role
+    prefix: "role"
+  - key: tags.Project
+    prefix: "all_instance"
+
+hostnames:
+  - "public_ipv4_addresses"
+
+compose:
+    ansible_user: "'azureuser'"
+conditional_groups:
+    all_the_hosts: true
+
