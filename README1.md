@@ -1701,8 +1701,8 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test the playbooks to create a Kubernetes cluster. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
-PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="azurkeytest"
+
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # k8s setup
@@ -1725,9 +1725,9 @@ terraform destroy -auto-approve -no-color
 - After running the job above, replace the script with the one below in order to test deleting existing key pair using AWS CLI with following script. (Click `Configure`)
 
 ```bash
-PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
-AWS_REGION="us-east-1"
+
+ANS_KEYPAIR="azurkeytest"
+AWS_REGION="northeurope"
 aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
 ```
@@ -1739,27 +1739,32 @@ rm -rf ${ANS_KEYPAIR}
 
 ```bash
 # Environment variables
-PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="petclinic-ansible-test-dev.key"
-AWS_REGION="us-east-1"
+az login
+ANS_KEYPAIR="azurkeytest"
+AWS_REGION="northeurope"
+AZ_RG="mysshkey"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Create key pair for Ansible
-aws ec2 create-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR} --query "KeyMaterial" --output text > ${ANS_KEYPAIR}
-chmod 400 ${ANS_KEYPAIR}
+ssh-keygen -m PEM -t rsa -b 2048 -f ${WORKSPACE}/${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
+az sshkey create --location ${AWS_REGION} --resource-group ${AZ_RG} --name ${ANS_KEYPAIR}
+
 # Create infrastructure for kubernetes
 cd infrastructure/dev-k8s-terraform
+sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
 terraform init
-terraform apply -auto-approve -no-color
+terraform apply -var-file="variables.tfvars" -auto-approve -no-color
 # Install k8s cluster on the infrastructure
-ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
 # Build, Deploy, Test the application
 # Tear down the k8s infrastructure
 cd infrastructure/dev-k8s-terraform
-terraform destroy -auto-approve -no-color
+terraform destroy -var-file="variables.tfvars" -auto-approve -no-color
+
 # Delete key pair
-aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
+az sshkey delete --resource-group ${AZ_RG} --name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
+rm -rf ${ANS_KEYPAIR}.pub
 ```
 
 - Commit the change, then push the script to the remote repo.
@@ -2186,7 +2191,7 @@ git push --set-upstream origin feature/msp-18
 ```bash
 PATH="$PATH:/usr/local/bin"
 APP_REPO_NAME="clarusway-repo/petclinic-app-dev" # Write your own repo name
-AWS_REGION="us-east-1" #Update this line if you work on another region
+AWS_REGION="northeurope" #Update this line if you work on another region
 ECR_REGISTRY="046402772087.dkr.ecr.us-east-1.amazonaws.com" # Replace this line with your ECR name
 aws ecr create-repository \
     --repository-name ${APP_REPO_NAME} \
@@ -2350,7 +2355,7 @@ pipeline {
         APP_NAME="petclinic"
         APP_REPO_NAME="clarusway-repo/${APP_NAME}-app-dev"
         AWS_ACCOUNT_ID=sh(script:'aws sts get-caller-identity --query Account --output text', returnStdout:true).trim()
-        AWS_REGION="us-east-1"
+        AWS_REGION="northeurope"
         ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         ANS_KEYPAIR="petclinic-${APP_NAME}-dev-${BUILD_NUMBER}.key"
         ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
@@ -2677,7 +2682,7 @@ git checkout feature/msp-20
 ```bash
 PATH="$PATH:/usr/local/bin"
 APP_REPO_NAME="clarusway-repo/petclinic-app-qa"
-AWS_REGION="us-east-1"
+AWS_REGION="northeurope"
 
 aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
 aws ecr create-repository \
@@ -2805,7 +2810,7 @@ PATH="$PATH:/usr/local/bin:$HOME/bin"
 APP_NAME="petclinic"
 APP_REPO_NAME="clarusway-repo/petclinic-app-qa"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-export AWS_REGION="us-east-1"
+export AWS_REGION="northeurope"
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 echo 'Packaging the App into Jars with Maven'
 . ./jenkins/package-with-maven-container.sh
@@ -2866,7 +2871,7 @@ pipeline {
         APP_NAME="petclinic"
         APP_REPO_NAME="clarusway-repo/petclinic-app-qa"
         AWS_ACCOUNT_ID=sh(script:'export PATH="$PATH:/usr/local/bin" && aws sts get-caller-identity --query Account --output text', returnStdout:true).trim()
-        AWS_REGION="us-east-1"
+        AWS_REGION="northeurope"
         ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
     stages {

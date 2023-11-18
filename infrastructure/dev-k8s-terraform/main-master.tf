@@ -12,9 +12,9 @@ resource "azurerm_linux_virtual_machine" "kube-master" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/workspace/test/infrastructure/keys/azurkey.pub") # SSH anahtarınızın dosya yolunu güncelleyin
+    public_key = file("~/petclinic-nightly/azurkeytest.pub") # SSH anahtarınızın dosya yolunu güncelleyin
   }
-
+/home/azureuser/petclinic-microservices-azure/infrastructure/dev-k8s-terraform
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
