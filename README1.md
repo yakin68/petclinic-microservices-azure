@@ -1,7 +1,5 @@
   az login --service-principal -u <app-id> -p <client-secret> --tenant <tenant-id>
 
-    az login --service-principal -u 74197c47-694e-4f83-b6d2-4c2f82bf175b -p KrH8Q~5KCwxOV_UWRvFEq4evYJO2mSAQfCb-Obza --tenant 8388ef3f-c433-4ae9-8eff-e0cea679d269 
-    
   az ad sp create-for-rbac --name ServicePrincipalName
 # Project 505: Microservices CI/CD Pipeline
 
@@ -1499,8 +1497,10 @@ ANS_KEYPAIR="azurkeytest"
 export ANSIBLE_INVENTORY="${WORKSPACE}/ansible/inventory/hosts.ini"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
+chmod 400 ${WORKSPACE}/${ANS_KEYPAIR}
 ansible all -m ping
 ```
+export ANSIBLE_PRIVATE_KEY_FILE="/home/azureuser/petclinic-microservices-azure/infrastructure/keys"
 
 - Prepare dynamic inventory file with name of 'myazuresub.azure_rm.yaml' eski dosya adı aws için `myazuresub.azure_rm.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
 
@@ -1539,9 +1539,9 @@ git push
 
 ```bash
 ANS_KEYPAIR="azurkeytest"
-export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
+export ANSIBLE_PRIVATE_KEY_FILE="./${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible-inventory -v -i ./ansible/inventory/myazuresub.azure_rm.yaml --graph
+ansible-inventory -v -i ./myazuresub.azure_rm.yaml --graph
 ```
   * Click `Save`
 
@@ -1555,8 +1555,15 @@ ANS_KEYPAIR="azurkeytest"
 
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible -i ./ansible/inventory/myazuresub.azure_rm.yaml all -m ping
+ansible -i ./myazuresub.azure_rm.yaml
 ```
+
+ANS_KEYPAIR="azurkeytest"
+export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/infrastructure/keys/${ANS_KEYPAIR}"
+export ANSIBLE_HOST_KEY_CHECKING=False
+ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
+
+
   * Click `Save`
 
   * Click `Build Now`
@@ -1602,7 +1609,7 @@ ansible -i ./ansible/inventory/myazuresub.azure_rm.yaml all -m ping
       apt-get install -qy kubelet=1.28.2-1.1 kubeadm=1.28.2-1.1 kubectl=1.28.2-1.1 kubernetes-cni docker.io
       apt-mark hold kubelet kubeadm kubectl
 
-  - name: Add azureuser to docker group
+  - name: Add ubuntu to docker group
     user:
       name: azureuser
       group: docker
@@ -1667,7 +1674,7 @@ ansible -i ./ansible/inventory/myazuresub.azure_rm.yaml all -m ping
 
   - name: install Helm 
     shell: |
-      cd /home/asureuser
+      cd /home/ubuntu
       curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
       chmod 777 get_helm.sh
       ./get_helm.sh
@@ -1694,12 +1701,12 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test the playbooks to create a Kubernetes cluster. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkeytest"
-
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # k8s setup
-ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
 ```
   * Click `Save`
 
@@ -1719,8 +1726,8 @@ terraform destroy -auto-approve -no-color
 
 ```bash
 PATH="$PATH:/usr/local/bin"
-ANS_KEYPAIR="azurkeytest"
-AWS_REGION="northeurope"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+AWS_REGION="us-east-1"
 aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
 ```
@@ -1732,9 +1739,9 @@ rm -rf ${ANS_KEYPAIR}
 
 ```bash
 # Environment variables
-
-ANS_KEYPAIR="azurkeytest"
-AWS_REGION="northeurope"
+PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+AWS_REGION="us-east-1"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Create key pair for Ansible
@@ -1745,7 +1752,7 @@ cd infrastructure/dev-k8s-terraform
 terraform init
 terraform apply -auto-approve -no-color
 # Install k8s cluster on the infrastructure
-ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
 # Build, Deploy, Test the application
 # Tear down the k8s infrastructure
 cd infrastructure/dev-k8s-terraform
@@ -2096,7 +2103,7 @@ git checkout feature/msp-18
 - Prepare a script to ``package`` the app with maven Docker container and save it as `package-with-maven-container.sh` and save it under `jenkins` folder.
 
 ```bash
-docker run --rm -v $HOME/.m2:/root/.m2 -v $WORKSPACE:/app -w /app maven:3.6-openjdk-11 mvn clean package
+docker run --rm -v $HOME/.m2:/root/.m2 -v $WORKSPACE:/app -w /app maven:3.8-openjdk-11 mvn clean package
 ```
 
 - Prepare a script to create ``ECR tags`` for the dev docker images and save it as `prepare-tags-ecr-for-dev-docker-images.sh` and save it under `jenkins` folder.
@@ -2436,7 +2443,7 @@ pipeline {
         stage('Create Kubernetes Cluster for QA Automation Build') {
             steps {
                 echo "Setup Kubernetes cluster for ${APP_NAME} App"
-                sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml"
+                sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml"
             }
         }
 
@@ -2450,7 +2457,7 @@ pipeline {
                 sh "helm s3 push --force petclinic_chart-${BUILD_NUMBER}.tgz stable-petclinic"
                 sh "envsubst < ansible/playbooks/dev-petclinic-deploy-template > ansible/playbooks/dev-petclinic-deploy.yaml"
                 sh "sleep 60"    
-                sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
+                sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
             }
         }     
 
@@ -2587,7 +2594,7 @@ eksctl version
 - Download the Amazon EKS vended kubectl binary.
 
 ```bash
-curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.4/2023-05-11/bin/linux/amd64/kubectl
+curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.27.7/2023-11-14/bin/linux/amd64/kubectl
 ```
 
 - Apply execute permissions to the binary.
@@ -2643,7 +2650,7 @@ eksctl create cluster -f cluster.yaml
 
 ```bash
 export PATH=$PATH:$HOME/bin
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
 ```
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
