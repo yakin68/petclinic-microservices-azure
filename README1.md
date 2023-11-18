@@ -1497,25 +1497,29 @@ export ANSIBLE_HOST_KEY_CHECKING=False
 ansible all -m ping
 ```
 
-- Prepare dynamic inventory file with name of 'myazuresub.azure_rm.yaml' eski dosya adı aws için `dev_stack_dynamic_inventory_aws_ec2.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
+- Prepare dynamic inventory file with name of 'myazuresub.azure_rm.yaml' eski dosya adı aws için `myazuresub.azure_rm.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
 
 ```yaml
-plugin: azure.azcollection.azure_rm
-regions:
-  - "us-east-1"
-filters:
-  tag:Project: tera-kube-ans
-  tag:environment: dev
-  instance-state-name: running
+plugin: azure_rm
+auth_source: auto
+include_vm_resource_groups:
+  - project-kube-claster-worker
+plain_host_names: true
+exclude_host_filters:
+  - powerstate != 'running'
 keyed_groups:
-  - key: tags['Project']
-    prefix: 'all_instances'
-  - key: tags['Role']
-    prefix: 'role'
+  - key: tags.Role
+    prefix: "role"
+  - key: tags.Project
+    prefix: "all_instance"
+
 hostnames:
-  - "ip-address"
+  - "public_ipv4_addresses"
+
 compose:
-  ansible_user: "'azureuser'"
+    ansible_user: "'azureuser'"
+conditional_groups:
+    all_the_hosts: true
 ```
 
 - Commit the change, then push the remote repo.
@@ -1543,10 +1547,10 @@ ansible-inventory -v -i ./ansible/inventory/myazuresub.azure_rm.yaml --graph
 ```bash
 # Test dev dynamic inventory by pinging
 ANS_KEYPAIR="azurkeytest"
-
+petclinic-microservices-azure/infrastructure/keys
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m ping
+ansible -i ./ansible/inventory/myazuresub.azure_rm.yaml all -m ping
 ```
   * Click `Save`
 
@@ -1593,9 +1597,9 @@ ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m p
       apt-get install -qy kubelet=1.28.2-1.1 kubeadm=1.28.2-1.1 kubectl=1.28.2-1.1 kubernetes-cni docker.io
       apt-mark hold kubelet kubeadm kubectl
 
-  - name: Add ubuntu to docker group
+  - name: Add azureuser to docker group
     user:
-      name: ubuntu
+      name: azureuser
       group: docker
 
   - name: Restart docker and enable
@@ -1690,7 +1694,7 @@ ANS_KEYPAIR="azurkeytest"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # k8s setup
-ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
 ```
   * Click `Save`
 
@@ -1736,7 +1740,7 @@ cd infrastructure/dev-k8s-terraform
 terraform init
 terraform apply -auto-approve -no-color
 # Install k8s cluster on the infrastructure
-ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
 # Build, Deploy, Test the application
 # Tear down the k8s infrastructure
 cd infrastructure/dev-k8s-terraform
@@ -2427,7 +2431,7 @@ pipeline {
         stage('Create Kubernetes Cluster for QA Automation Build') {
             steps {
                 echo "Setup Kubernetes cluster for ${APP_NAME} App"
-                sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml"
+                sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml"
             }
         }
 
@@ -2441,7 +2445,7 @@ pipeline {
                 sh "helm s3 push --force petclinic_chart-${BUILD_NUMBER}.tgz stable-petclinic"
                 sh "envsubst < ansible/playbooks/dev-petclinic-deploy-template > ansible/playbooks/dev-petclinic-deploy.yaml"
                 sh "sleep 60"    
-                sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
+                sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
             }
         }     
 

@@ -13,25 +13,15 @@ sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf 
 ssh-keygen -m PEM -t rsa -b 2048 -f ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
 terraform init
 terraform apply -var-file="variables.tfvars" -auto-approve -no-color
-ansible-inventory -v -i ./ansible/inventory/myazuresub.azure_rm.yaml --graph
-ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m ping
-ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
-
 #ip değiştirelim masre ve worker ip
 cd ~/workspace/test/infrastructure/keys/
 ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@98.71.90.56
 ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@98.71.90.56
 ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@98.71.90.56
 
-
-ansible all -m ping
-
-# Install k8s cluster on the infrastructure
+ansible-inventory -v -i ./ansible/inventory/myazuresub.azure_rm.yaml --graph
+ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m ping
 ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
-# Build, Deploy, Test the application
-# Tear down the k8s infrastructure
+
 cd infrastructure/dev-k8s-terraform
 terraform destroy -auto-approve -no-color
-# Delete key pair
-aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
-rm -rf ${ANS_KEYPAIR}
