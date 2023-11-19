@@ -1,0 +1,77 @@
+rg="helmchart"
+location="northeurope"
+blobStoreName="yakin"
+containerName="helm"
+helmRepoName="yakinhelm"
+
+az group create -n $rg -l $location
+
+az storage account create \
+-n $blobStoreName         \
+-g $rg                    \
+-l $location              \
+--sku Standard_LRS        \
+--kind BlobStorage        \
+--access-tier Cool
+
+export AZURE_STORAGE_ACCOUNT=$blobStoreName
+export AZURE_STORAGE_KEY=$(az storage account keys list --resource-group $rg --account-name $blobStoreName | grep -m 1 value | awk -F'"' '{print $4}')
+
+export AZURE_STORAGE_ACCOUNT=$blobStoreName
+export AZURE_STORAGE_KEY=$(az storage account keys list --resource-group $rg --account-name $blobStoreName | grep -m 1 value | awk -F'"' '{print $4}')
+
+az storage container create \
+--name helm                 \
+--public-access blob
+
+helm create myfirstchart
+helm lint myfirstchart
+helm package myfirstchart
+helm repo index --url https://$blobStoreName.blob.core.windows.net/helm/ .
+
+# Elbette bu gönderi, yeni dümen deponuza tek bir grafik ekleyerek başlamanıza yardımcı olur.
+# Bir noktada ek grafikler yüklemek isteyeceksiniz. 
+# Her yeni grafik için index.yaml dosyasını yeniden oluşturmanız gerekir. 
+# index.yaml dosyanızı yeniden oluşturmak için önceki komutu kullanabilirsiniz
+# helm repo index --url, ancak bu onu sıfırdan yeniden oluşturacaktır ve varsayılan olarak yalnızca yerel olarak bulunan grafikleri içerecektir.Neyse ki bunu kolaylaştırabilecek bir bayrak var: --merge. --mergeMevcut index.yaml dosyamızda artımlı güncellemeler yapmak için bayrağı kullanabiliriz . İşte bir örnek:
+
+helm repo index --url https://$blobStoreName.blob.core.windows.net/helm/ --merge index.yaml .
+
+az storage blob upload --container-name $containerName --file index.yaml --name index.yaml
+
+az storage blob upload --container-name $containerName --file *.tgz --name *.tgz
+az storage blob upload --container-name $containerName --file ./myfirstchart-0.1.0.tgz --name myfirstchart-0.1.0.tgz
+
+
+helm repo add $helmRepoName https://$blobStoreName.blob.core.windows.net/helm/index.yaml
+helm repo add yakinhelm https://yakin.blob.core.windows.net/helm/
+helm repo add azure https://yakin.blob.core.windows.net/helm/\?sp=racwdyi&st=2023-11-19T20:55:37Z&se=2023-11-30T04:55:37Z&sv=2022-11-02&sr=b&sig=wZyfDBetwH78rDbBuM5p0N78SLh0l8yyeGqmtoIJ8Ew%3D
+helm repo add azure https://yakin.blob.core.windows.net/helm/\sp=racwdyi&st=2023-11-19T20:55:37Z&se=2023-11-30T04:55:37Z&sv=2022-11-02&sr=b&sig=wZyfDBetwH78rDbBuM5p0N78SLh0l8yyeGqmtoIJ8Ew%3D
+helm repo add azure https://yakin.blob.core.windows.net/helm/index.yaml?sp=racwdyi&st=2023-11-19T20:55:37Z&se=2023-11-30T04:55:37Z&sv=2022-11-02&sr=b&sig=wZyfDBetwH78rDbBuM5p0N78SLh0l8yyeGqmtoIJ8Ew%3D
+az storage container generate-sas --name helm --expiry 2023-11-25 --permissions lr
+helm repo add yakinhelm https://yakin.blob.core.windows.net/helm/\?se=2023-11-25&sp=rl&sv=2022-11-02&sr=c&sig=pPAgDUD8wTCfwaf%2BDfyhp1bO1MfzhB/GWrpHt%2Beu8DA%3D
+helm repo add azure https://yakin.blob.core.windows.net/helm?sp=r&st=2023-11-19T21:25:25Z&se=2023-11-20T05:25:25Z&spr=https&sv=2022-11-02&sr=c&sig=B8XIzsHiU73K01Zyqg2eJewMQFXtrY7JHs%2FLy9EsKh0%3D
+helm repo list
+
+helm search myfirstchart
+
+helm upgrade myfirstchart --install --namespace default yakinhelm/myfirstchart
+
+
+
+
+
+ACR_NAME="helmchart"
+USER_NAME="helmchart"
+
+
+helm registry login $ACR_NAME.azurecr.io \
+  --username $USER_NAME \
+  --password KBXRGYu6llxrUO+9ABBKbBEznN7OgyL5keSD6YaXJ5+ACRCQs7Mi
+helm create petclinic_chart
+helm package etclinic_chart
+helm push hello-world-0.1.0.tgz oci://$ACR_NAME.azurecr.io/helm
+helm pull oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
+
+
+az acr repository delete --name $ACR_NAME --image helm/hello-world:0.1.0
