@@ -2201,6 +2201,7 @@ git commit -m 'added scripts for running dummy selenium job'
 git push --set-upstream origin feature/msp-18
 ```
 
+geçti buraları
 - Create a Jenkins job with name of `test-running-dummy-selenium-job` to check the setup for selenium tests by running dummy selenium job on `feature/msp-18` branch.
 
 ```yml
