@@ -1,0 +1,36 @@
+- hosts: role_master
+  tasks:
+
+  - name: Create .docker folder
+    file:
+      path: /home/azureuser/.docker
+      state: directory
+      mode: '0755'
+
+  - name: copy the docker config file
+    become: yes
+    copy: 
+      src: $JENKINS_HOME/.docker/config.json
+      dest: /home/azureuser/.docker/config.json
+
+  - name: deploy petclinic application
+    shell: |
+      kubectl create ns petclinicdev
+      kubectl delete secret regcred -n petclinicdev || true
+      kubectl create secret generic regcred -n petclinicdev \
+        --from-file=.dockerconfigjson=/home/azureuser/.docker/config.json \
+        --type=kubernetes.io/dockerconfigjson
+
+
+      helm registry login stablepetclinic.azurecr.io \
+        --username stablepetclinic \
+        --password LA7abcvNvfivBhqglEsAz/kEDB1b6c0Vq9/sa1nQPa+ACRDLKpRn
+
+      helm upgrade --install petclinicapprelease  oci://stablepetclinic.azurecr.io/petclinic/petclinic --version ${BUILD_NUMBER} --namespace petclinicdev
+
+
+  
+
+
+
+

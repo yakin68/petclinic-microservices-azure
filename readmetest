@@ -61,17 +61,28 @@ helm upgrade myfirstchart --install --namespace default yakinhelm/myfirstchart
 
 
 
-ACR_NAME="helmchart"
+ACR_NAME="stablepetclinic"
 USER_NAME="helmchart"
 
 
 helm registry login $ACR_NAME.azurecr.io \
   --username $USER_NAME \
   --password KBXRGYu6llxrUO+9ABBKbBEznN7OgyL5keSD6YaXJ5+ACRCQs7Mi
-helm create petclinic_chart
-helm package etclinic_chart
-helm push hello-world-0.1.0.tgz oci://$ACR_NAME.azurecr.io/helm
-helm pull oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
 
+helm create petclinic
+helm package petclinic
+helm push hello-world-0.1.0.tgz oci://$ACR_NAME.azurecr.io/helm
+
+helm pull oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
+helm upgrade --install myhelmtest oci://stablepetclinic.azurecr.io/petclinic/petclinic --version 0.1.0
 
 az acr repository delete --name $ACR_NAME --image helm/hello-world:0.1.0
+
+
+
+helm registry login stablepetclinic.azurecr.io \
+  --username stablepetclinic \
+  --password LA7abcvNvfivBhqglEsAz/kEDB1b6c0Vq9/sa1nQPa+ACRDLKpRn
+
+helm push petclinic-0.1.0.tgz oci://stablepetclinic.azurecr.io/petclinic
+

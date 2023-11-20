@@ -1964,119 +1964,21 @@ DNS_NAME: "www.devopsturkiye.com" # create your dns name
 * Create an ``S3 bucket`` for Helm charts. In the bucket, create a ``folder`` called ``stable/myapp``. The example in this pattern uses s3://petclinic-helm-charts-<put-your-name>/stable/myapp as the target chart repository.
 
 ```bash
-aws s3api create-bucket --bucket petclinic-helm-charts-<put-your-name> --region us-east-1
-aws s3api put-object --bucket petclinic-helm-charts-<put-your-name> --key stable/myapp/
-```
-
-* Install the helm-s3 plugin for Amazon S3.
-
-```bash
-helm plugin install https://github.com/hypnoglow/helm-s3.git
-```
-
-* On some systems we need to install ``Helm S3 plugin`` as Jenkins user to be able to use S3 with pipeline script.
-
-``` bash
-sudo su -s /bin/bash jenkins
-export PATH=$PATH:/usr/local/bin
-helm version
-helm plugin install https://github.com/hypnoglow/helm-s3.git
-exit
-``` 
-
-* ``Initialize`` the Amazon S3 Helm repository.
-
-```bash
-AWS_REGION=us-east-1 helm s3 init s3://petclinic-helm-charts-<put-your-name>/stable/myapp 
-```
-
-* The command creates an ``index.yaml`` file in the target to track all the chart information that is stored at that location.
-
-* Verify that the ``index.yaml`` file was created.
-
-```bash
-aws s3 ls s3://petclinic-helm-charts-<put-your-name>/stable/myapp/
-```
-
-* Add the Amazon S3 repository to Helm on the client machine. 
-
-```bash
-helm repo ls
-AWS_REGION=us-east-1 helm repo add stable-petclinicapp s3://petclinic-helm-charts-<put-your-name>/stable/myapp/
-```
-
-* Update `version` and `appVersion` field of `k8s/petclinic_chart/Chart.yaml` file as below for testing.
-
-```yaml
-version: 0.0.1
-appVersion: 0.1.0
-```
-
-* ``Package`` the local Helm chart.
-
-```bash
 cd k8s
-helm package petclinic_chart/ 
 ```
+ACR_NAME="helmchart"
+USER_NAME="helmchart"
 
-* Store the local package in the Amazon S3 Helm repository.
+helm registry login $ACR_NAME.azurecr.io \
+  --username $USER_NAME \
+  --password KBXRGYu6llxrUO+9ABBKbBEznN7OgyL5keSD6YaXJ5+ACRCQs7Mi
+helm create petclinic_chart
+helm package etclinic_chart
+helm push hello-world-0.1.0.tgz oci://$ACR_NAME.azurecr.io/helm
 
-```bash
-HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-0.0.1.tgz stable-petclinicapp
-```
+helm pull oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
 
-* Search for the Helm chart.
-
-```bash
-helm search repo stable-petclinicapp
-```
-
-* You get an output as below.
-
-```bash
-NAME                                    CHART VERSION   APP VERSION     DESCRIPTION                
-stable-petclinicapp/petclinic_chart     0.0.1           0.1.0           A Helm chart for Kubernetes
-```
-
-* In ``Chart.yaml``, ``set`` the `version` value to `0.0.2` in Chart.yaml, and then package the chart, this time changing the version in Chart.yaml to 0.0.2. Version control is ideally achieved through automation by using tools like GitVersion or Jenkins build numbers in a CI/CD pipeline. 
-
-```bash
-helm package petclinic_chart/
-```
-
-* Push the new version to the Helm repository in Amazon S3.
-
-```bash
-HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-0.0.2.tgz stable-petclinicapp
-```
-
-* Verify the updated Helm chart.
-
-```bash
-helm repo update
-helm search repo stable-petclinicapp
-```
-
-* You get an ``output`` as below.
-
-```bash
-NAME                                    CHART VERSION   APP VERSION     DESCRIPTION                
-stable-petclinicapp/petclinic_chart     0.0.2           0.1.0           A Helm chart for Kubernetes
-```
-
-* To view all the available versions of a chart execute following command.
-
-```bash
-helm search repo stable-petclinicapp --versions
-```
-
-* Output:
-
-```bash
-NAME                                    CHART VERSION   APP VERSION     DESCRIPTION                
-stable-petclinicapp/petclinic_chart     0.0.2           0.1.0           A Helm chart for Kubernetes
-stable-petclinicapp/petclinic_chart     0.0.1           0.1.0           A Helm chart for Kubernetes
-```
+az acr repository delete --name $ACR_NAME --image helm/hello-world:0.1.0
 
 * In ``Chart.yaml``, ``set`` the `version` value to `HELM_VERSION` in Chart.yaml for automation in jenkins pipeline.
 
@@ -2190,7 +2092,8 @@ git push --set-upstream origin feature/msp-18
 PATH="$PATH:/usr/local/bin"
 APP_REPO_NAME="clarusway-repo/petclinic-app-dev" # Write your own repo name
 AWS_REGION="northeurope" #Update this line if you work on another region
-ECR_REGISTRY="046402772087.dkr.ecr.us-east-1.amazonaws.com" # Replace this line with your ECR name
+ECR_REGISTRY="yakindockerimage.azurecr.io" # Replace this line with your ECR name
+
 aws ecr create-repository \
     --repository-name ${APP_REPO_NAME} \
     --image-scanning-configuration scanOnPush=false \
