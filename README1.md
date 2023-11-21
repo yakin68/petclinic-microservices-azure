@@ -886,6 +886,10 @@ git checkout dev
 git merge feature/msp-12
 git push origin dev
 ```
+
+git add .
+git commit -m 'added Jenkins Job for CI pipeline'
+git push origin dev
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## MSP 13 - Prepare and Implement Selenium Tests
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

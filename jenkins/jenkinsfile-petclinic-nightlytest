@@ -20,7 +20,7 @@ pipeline {
 
                     az acr show --name $ACR_REPO_NAME \
                     --resource-group $ACR_RESOURCE_GROUP || \
-                            az acr create --name $AACR_REPO_NAME \
+                            az acr create --name $ACR_REPO_NAME \
                             --resource-group $ACR_RESOURCE_GROUP \
                             --sku Basic --location $AZ_REGION --admin-enabled true
 
