@@ -24,7 +24,7 @@ pipeline {
                             --resource-group $ACR_RESOURCE_GROUP \
                             --sku Basic --location $AZ_REGION --admin-enabled true
 
-                    az acr login --name $ACR_NAME
+                    az acr login --name $ACR_REPO_NAME
                     
                 '''
             }
