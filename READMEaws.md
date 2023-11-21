@@ -2091,6 +2091,18 @@ docker build --force-rm -t "${IMAGE_TAG_PROMETHEUS_SERVICE}" "${WORKSPACE}/docke
 ```bash
 # Provide credentials for Docker to login the AWS ECR and push the images
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY} 
+
+az acr login --name yakinpetclinicdockerimage | docker login --username yakinpetclinicdockerimage --password-stdin yakinpetclinicdockerimage.azurecr.io
+az acr login --name yakinpetclinicdockerimage | docker login --username yakinpetclinicdockerimage --password xv0fJcaca8v1TZj+mM3/vmlC1sI96vkSR7xqbrvBBw+ACRD7enOB
+docker login --password-stdin yakinpetclinicdockerimage.azurecr.io
+
+az acr credential-set create -r yakinpetclinicdockerimage -n yakinpetclinicdockerimage -l docker.io -u dockerimage -p Docker0101
+
+az acr create --name yakinpetclinicdockerimage --resource-group dockerimage --sku Basic --location northeurope --admin-enabled true
+                            az acr create --name $AACR_REPO_NAME \
+                            --resource-group $ACR_RESOURCE_GROUP \
+                            --sku Basic --location $AZ_REGION
+
 docker push "${IMAGE_TAG_ADMIN_SERVER}"
 docker push "${IMAGE_TAG_API_GATEWAY}"
 docker push "${IMAGE_TAG_CONFIG_SERVER}"

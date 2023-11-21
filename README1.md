@@ -1080,8 +1080,11 @@ ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre
 ACR_REGION="northeurope"  # Azure bölgesini buraya ekleyin
 
 # Azure Container Registry kontrol et
-az acr show --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP || \
-az acr create --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP --sku Basic --location $ACR_REGION
+az acr show --name $ACR_NAME \
+--resource-group $ACR_RESOURCE_GROUP || \
+az acr create --name $ACR_NAME \
+--resource-group $ACR_RESOURCE_GROUP \
+--sku Basic --location $ACR_REGION
 
 ```
 
@@ -2053,7 +2056,11 @@ docker build --force-rm -t "${IMAGE_TAG_PROMETHEUS_SERVICE}" "${WORKSPACE}/docke
 
 ```bash
 # Provide credentials for Docker to login the AWS ECR and push the images
-aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY} 
+ACR_NAME="yakindockerimage"
+PASSWORD="NyRCXCW430XMZXXNx1S220LxMPye1A2fT+/M4YTgyS+ACRDwei4F"
+
+az acr login --name $ACR_NAME | docker login $ACR_NAME.azurecr.io -u $$ACR_NAME  -p $PASSWORD 
+
 docker push "${IMAGE_TAG_ADMIN_SERVER}"
 docker push "${IMAGE_TAG_API_GATEWAY}"
 docker push "${IMAGE_TAG_CONFIG_SERVER}"

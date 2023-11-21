@@ -5,7 +5,7 @@ pipeline {
         ACR_REPO_NAME="yakin${APP_NAME}dockerimage"
         AZ_REGION="northeurope"
         ACR_REGISTRY="${ACR_REPO_NAME}.azurecr.io"
-        ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre güncelleyin
+        ACR_RESOURCE_GROUP="dockerimage"
         ANS_KEYPAIR="petclinic-${APP_NAME}-dev-${BUILD_NUMBER}.key"
         ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
         ANSIBLE_HOST_KEY_CHECKING="False"
@@ -18,14 +18,14 @@ pipeline {
                 sh '''
                     az login --use-device-code
 
-                    az acr show --name $ACR_NAME \
+                    az acr show --name $ACR_REPO_NAME \
                     --resource-group $ACR_RESOURCE_GROUP || \
-                            az acr create --name $ACR_NAME \
+                            az acr create --name $AACR_REPO_NAME \
                             --resource-group $ACR_RESOURCE_GROUP \
-                            --sku Basic --location $ACR_REGION
+                            --sku Basic --location $AZ_REGION --admin-enabled true
 
                     az acr login --name $ACR_NAME
-                    docker login ${ACR_REPO_NAME}.azurecr.io"
+                    
                 '''
             }
         }
