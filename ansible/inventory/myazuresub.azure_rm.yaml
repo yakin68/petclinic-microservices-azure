@@ -1,0 +1,21 @@
+plugin: azure_rm
+auth_source: auto
+include_vm_resource_groups:
+  - project-kube-claster-worker
+plain_host_names: true
+exclude_host_filters:
+  - powerstate != 'running'
+keyed_groups:
+  - key: tags.Role
+    prefix: "role"
+  - key: tags.Project
+    prefix: "all_instance"
+
+hostnames:
+  - "public_ipv4_addresses"
+
+compose:
+    ansible_user: "'azureuser'"
+conditional_groups:
+    all_the_hosts: true
+

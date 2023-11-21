@@ -92,7 +92,7 @@ git clone https://github.com/clarusway/petclinic-microservices-with-db.git
 * Change your working directory to **petclinic-microservices** and delete the **.git** directory.
 
 ```bash
-cd petclinic-microservices-azure
+cd petclinic-microservices-with-db
 rm -rf .git
 ```
 
@@ -103,32 +103,23 @@ rm -rf .git
 ```bash
 git init
 git add .
-git config --global user.email "yakin68@gmail.com.com"
-git config --global user.name "yakin68"
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
 git commit -m "first commit"
 git branch -M main
 git remote add origin https://[github username]:[your-token]@github.com/[your-git-account]/[your-repo-name-petclinic-microservices-with-db.git]
 git push origin main
 ```
-
-<!-- git remote -v
-git remote set-url origin https://token@.......git
-https://[github username]:[your-token]@github.com/[your-git-account]/[your-repo-name-petclinic-microservices-with-db.git]
-
- --> hata olursa bunu kullan, ayrıca cd .git içinde config dosyasında bu adresi görebilirsin. 
-
 * Prepare base branches namely `dev` and `release` for DevOps cycle.
 
   + Create `dev` base branch.
 
     ``` bash
     git checkout main
-    git branch dev  ## dev oluşturma
+    git branch dev
     git checkout dev
-    git push --set-upstream origin dev ## ilk defa branch push lanınca bu komut
+    git push --set-upstream origin dev
     ```
-    git branch -a
-    git branch
 
   + Create `release` base branch.
 
@@ -138,13 +129,6 @@ https://[github username]:[your-token]@github.com/[your-git-account]/[your-repo-
     git checkout release
     git push --set-upstream origin release
     ```
-
-bunları bashrc en sonuna copyala
-    parse_git_branch() {
-    git branch 2> /dev/null | sed -e ' /^[^*]/d' -e 's/*\(.*\)/(\1)/'
-} 
-
-export PS1="\[\e[1;32m\]\u\[\e[35m\]@\h# \W:\e[33m\]\[\e[1;36m\]\$(parse_git_branch)$\[\033[00m\]"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## MSP 3 - Check the Maven Build Setup on Dev Branch
@@ -232,7 +216,7 @@ mkdir infrastructure
 ``` bash
 git add .
 git commit -m 'added terraform files for dev server'
-git push --set-upstream origin feature/msp-5   ## git push -u origin feature/msp-5  // buda yazılabilir
+git push --set-upstream origin feature/msp-5
 git checkout dev
 git merge feature/msp-5
 git push origin dev
@@ -672,12 +656,6 @@ git push origin dev
 ```bash
 git clone https://[github username]:[your-token]@github.com/[your-git-account]/[your-repo-name-petclinic-microservices-with-db.git
 ```
-bashrc en sonuna yapıştır.
-<!-- parse_git_branch() {
-    git branch 2> /dev/null | sed -e ' /^[^*]/d' -e 's/*\(.*\)/(\1)/'
-} 
-
-export PS1="\[\e[1;32m\]\u\[\e[35m\]@\h# \W:\e[33m\]\[\e[1;36m\]\$(parse_git_branch)$\[\033[00m\]" -->
 
 * Get the initial administrative password.
 
@@ -761,7 +739,7 @@ public class PetTest {
 
 ``` bash
 git add .
-git commit -m 'added 3 UTs for customer-service'
+git commit -m 'added 1 UT file for the customer-service'
 git push --set-upstream origin feature/msp-11
 ```
 
@@ -844,15 +822,13 @@ mkdir jenkins
                                           - */bugfix**
 - Build triggers: GitHub hook trigger for GITScm polling
 - Build Environment: Add timestamps to the Console Output
--Post-build Actions:
-     Add post-build action: Record jacoco coverage report
 - Build:
       Add build step: Execute Shell
       Command:
-```
-```bash
-echo 'Running Unit Tests on Petclinic Application'
-docker run --rm -v $HOME/.m2:/root/.m2 -v `pwd`:/app -w /app maven:3.8-openjdk-11 mvn clean test
+              echo 'Running Unit Tests on Petclinic Application'
+              docker run --rm -v $HOME/.m2:/root/.m2 -v `pwd`:/app -w /app maven:3.8-openjdk-11 mvn clean test
+- Post-build Actions:
+     Add post-build action: Record jacoco coverage report
 ```
 
 * Jenkins `CI Job` should be triggered to run on each commit of `feature**` and `bugfix**` branches and on each `PR` merge to `dev` branch.
@@ -886,6 +862,7 @@ git checkout dev
 git merge feature/msp-12
 git push origin dev
 ```
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ## MSP 13 - Prepare and Implement Selenium Tests
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1075,30 +1052,31 @@ git checkout feature/msp-14
       Command:
 ```
 ```bash
-ACR_NAME="claruswayrepopetclinicappdev"  # Azure Container Registry adını buraya ekleyin
-ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre güncelleyin
-ACR_REGION="northeurope"  # Azure bölgesini buraya ekleyin
+PATH="$PATH:/usr/local/bin"
+APP_REPO_NAME="clarusway-repo/petclinic-app-dev"
+AWS_REGION="us-east-1"
 
-# Azure Container Registry kontrol et
-az acr show --name $ACR_NAME \
---resource-group $ACR_RESOURCE_GROUP || \
-az acr create --name $ACR_NAME \
---resource-group $ACR_RESOURCE_GROUP \
---sku Basic --location $ACR_REGION
-
+aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
+aws ecr create-repository \
+--repository-name ${APP_REPO_NAME} \
+--image-scanning-configuration scanOnPush=false \
+--image-tag-mutability MUTABLE \
+--region ${AWS_REGION}
 ```
 
 * Prepare a script to create Docker Registry for `dev` on AWS ECR and save it as `create-ecr-docker-registry-for-dev.sh` under `infrastructure` folder.
 
 ``` bash
-ACR_NAME="claruswayrepopetclinicappdev"  # Azure Container Registry adını buraya ekleyin
-ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre güncelleyin
-ACR_REGION="northeurope"  # Azure bölgesini buraya ekleyin
+PATH="$PATH:/usr/local/bin"
+APP_REPO_NAME="clarusway-repo/petclinic-app-dev"
+AWS_REGION="us-east-1"
 
-# Azure Container Registry kontrol et
-az acr show --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP || \
-az acr create --name $ACR_NAME --resource-group $ACR_RESOURCE_GROUP --sku Basic --location $ACR_REGION
-
+aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
+aws ecr create-repository \
+--repository-name ${APP_REPO_NAME} \
+--image-scanning-configuration scanOnPush=false \
+--image-tag-mutability MUTABLE \
+--region ${AWS_REGION}
 ```
 
 * Commit the change, then push the script to the remote repo.
@@ -1374,6 +1352,7 @@ git branch feature/msp-16
 git checkout feature/msp-16
 git push --set-upstream origin feature/msp-16
 ```
+
 - Create a ``Jenkins Job`` to test `bash` scripts creating QA Automation Infrastructure for `dev` manually.
 
 ```yml
@@ -1396,6 +1375,7 @@ PATH="$PATH:/usr/local/bin"
 python3 --version
 pip3 --version
 ansible --version
+aws --version
 terraform --version
 ```
 
@@ -1406,45 +1386,27 @@ terraform --version
 - After running the job above, replace the script with the one below in order to test creating key pair for `ansible`. (Click `Configure`)
 
 ```bash
-az login
-ANS_KEYPAIR="azurkeytest"
-AWS_REGION="northeurope"
-AZ_RG="mysshkey"
-# cd infrastructure/keys/
-# ssh-keygen -m PEM -t rsa -b 2048 -f ~/${ANS_KEYPAIR}
-# az sshkey create --location ${AWS_REGION} --resource-group ${AZ_RG} --name ${ANS_KEYPAIR} | sed -n -e '/"publicKey":/ s/.*"\(ssh-rsa.*\)".*/\1/p' > ${ANS_KEYPAIR}
-# chmod 400 ${ANS_KEYPAIR}
+PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+AWS_REGION="us-east-1"
+aws ec2 create-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR} --query "KeyMaterial" --output text > ${ANS_KEYPAIR}
+chmod 400 ${ANS_KEYPAIR}
 ```
-
   * Click `Save`
 
-  * Click `Build Now` 
-
-az login
-ANS_KEYPAIR="azurkeytest"
-chmod 400 ${ANS_KEYPAIR}
-ssh-copy-id -i ~/${ANS_KEYPAIR}.pub azureuser@137.116.226.216
-
-#!/bin/bash
-
-
-
-
-
+  * Click `Build Now`
 
 - After running the job above, replace the script with the one below in order to test creating kubernetes infrastructure with terraform. (Click `Configure`)
 
 ```bash
-
-ANS_KEYPAIR="azurkeytest"
-
+PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+AWS_REGION="us-east-1"
 cd infrastructure/dev-k8s-terraform
-sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
-
-ssh-keygen -m PEM -t rsa -b 2048 -f ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
+sed -i "s/clarus/$ANS_KEYPAIR/g" main.tf
 terraform init
-terraform apply -var-file="variables.tfvars" -auto-approve -no-color
-``
+terraform apply -auto-approve -no-color
+```
   * Click `Save`
 
   * Click `Build Now`
@@ -1452,17 +1414,8 @@ terraform apply -var-file="variables.tfvars" -auto-approve -no-color
 - After running the job above, replace the script with the one below in order to test SSH connection with one of the instances.(Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkeytest"
-# test item ve host adresi değiştirmeyi unutma
-cd ~/workspace/test/infrastructure/keys/
-ssh-copy-id -o StrictHostKeyChecking=no -i ~/workspace/test/infrastructure/keys/${ANS_KEYPAIR}.pub azureuser@98.71.90.56
-
-#test
-cd ~/workspace/test/infrastructure/keys/
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@98.71.90.56 hostname
-
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${ANS_KEYPAIR} azureuser@98.71.89.245 hostname
-
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${WORKSPACE}/${ANS_KEYPAIR} ubuntu@172.31.91.243 hostname
 ```
   * Click `Save`
 
@@ -1477,9 +1430,9 @@ mkdir -p ansible/inventory
 - Prepare static inventory file with name of `hosts.ini` for Ansible under `ansible/inventory` folder using Docker machines private IP addresses.
 
 ```ini
-172.31.91.243   ansible_user=azureuser  
-172.31.87.143   ansible_user=azureuser
-172.31.90.30    ansible_user=azureuser
+172.31.91.243   ansible_user=ubuntu  
+172.31.87.143   ansible_user=ubuntu
+172.31.90.30    ansible_user=ubuntu
 ```
 
 - Commit the change, then push to the remote repo.
@@ -1493,38 +1446,33 @@ git push --set-upstream origin feature/msp-16
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test ansible by pinging static hosts.
 
 ```bash
-ANS_KEYPAIR="azurkeytest"
+PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
 export ANSIBLE_INVENTORY="${WORKSPACE}/ansible/inventory/hosts.ini"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-chmod 400 ${WORKSPACE}/${ANS_KEYPAIR}
 ansible all -m ping
 ```
-export ANSIBLE_PRIVATE_KEY_FILE="/home/azureuser/petclinic-microservices-azure/infrastructure/keys"
 
-- Prepare dynamic inventory file with name of 'myazuresub.azure_rm.yaml' eski dosya adı aws için `myazuresub.azure_rm.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
+- Prepare dynamic inventory file with name of `dev_stack_dynamic_inventory_aws_ec2.yaml` for Ansible under `ansible/inventory` folder using ec2 instances private IP addresses.
 
 ```yaml
-plugin: azure_rm
-auth_source: auto
-include_vm_resource_groups:
-  - project-kube-claster-worker
-plain_host_names: true
-exclude_host_filters:
-  - powerstate != 'running'
+plugin: aws_ec2
+regions:
+  - "us-east-1"
+filters:
+  tag:Project: tera-kube-ans
+  tag:environment: dev
+  instance-state-name: running
 keyed_groups:
-  - key: tags.Role
-    prefix: "role"
-  - key: tags.Project
-    prefix: "all_instance"
-
+  - key: tags['Project']
+    prefix: 'all_instances'
+  - key: tags['Role']
+    prefix: 'role'
 hostnames:
-  - "public_ipv4_addresses"
-
+  - "ip-address"
 compose:
-    ansible_user: "'azureuser'"
-conditional_groups:
-    all_the_hosts: true
+  ansible_user: "'ubuntu'"
 ```
 
 - Commit the change, then push the remote repo.
@@ -1538,10 +1486,11 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to check the Ansible dynamic inventory for `dev` environment. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkeytest"
-export ANSIBLE_PRIVATE_KEY_FILE="./${ANS_KEYPAIR}"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+PATH="$PATH:/usr/local/bin"
+export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible-inventory -v -i ./myazuresub.azure_rm.yaml --graph
+ansible-inventory -v -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml --graph
 ```
   * Click `Save`
 
@@ -1551,19 +1500,12 @@ ansible-inventory -v -i ./myazuresub.azure_rm.yaml --graph
 
 ```bash
 # Test dev dynamic inventory by pinging
-ANS_KEYPAIR="azurkeytest"
-
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
-ansible -i ./myazuresub.azure_rm.yaml
+ansible -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml all -m ping
 ```
-
-ANS_KEYPAIR="azurkeytest"
-export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/infrastructure/keys/${ANS_KEYPAIR}"
-export ANSIBLE_HOST_KEY_CHECKING=False
-ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
-
-
   * Click `Save`
 
   * Click `Build Now`
@@ -1609,9 +1551,9 @@ ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
       apt-get install -qy kubelet=1.28.2-1.1 kubeadm=1.28.2-1.1 kubectl=1.28.2-1.1 kubernetes-cni docker.io
       apt-mark hold kubelet kubeadm kubectl
 
-  - name: Add azureuser to docker group
+  - name: Add ubuntu to docker group
     user:
-      name: azureuser
+      name: ubuntu
       group: docker
 
   - name: Restart docker and enable
@@ -1648,16 +1590,16 @@ ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
     shell: |
       kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=All
     
-  - name: Setup kubeconfig for azureuser user
+  - name: Setup kubeconfig for ubuntu user
     become: true
     command: "{{ item }}"
     with_items:
-     - mkdir -p /home/azureuser/.kube
-     - cp -i /etc/kubernetes/admin.conf /home/azureuser/.kube/config
-     - chown azureuser:azureuser /home/azureuser/.kube/config
+     - mkdir -p /home/ubuntu/.kube
+     - cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+     - chown ubuntu:ubuntu /home/ubuntu/.kube/config
 
   - name: Install flannel pod network
-    remote_user: azureuser
+    remote_user: ubuntu
     shell: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
 
   - name: Generate join command
@@ -1674,7 +1616,7 @@ ansible -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml all -m ping
 
   - name: install Helm 
     shell: |
-      cd /home/azureuser
+      cd /home/ubuntu
       curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
       chmod 777 get_helm.sh
       ./get_helm.sh
@@ -1701,12 +1643,12 @@ git push
 - Configure `test-creating-qa-automation-infrastructure` job and replace the existing script with the one below in order to test the playbooks to create a Kubernetes cluster. (Click `Configure`)
 
 ```bash
-ANS_KEYPAIR="azurkeytest"
-
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+PATH="$PATH:/usr/local/bin"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # k8s setup
-ansible-playbook -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
 ```
   * Click `Save`
 
@@ -1725,9 +1667,9 @@ terraform destroy -auto-approve -no-color
 - After running the job above, replace the script with the one below in order to test deleting existing key pair using AWS CLI with following script. (Click `Configure`)
 
 ```bash
-
-ANS_KEYPAIR="azurkeytest"
-AWS_REGION="northeurope"
+PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+AWS_REGION="us-east-1"
 aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
 ```
@@ -1739,34 +1681,28 @@ rm -rf ${ANS_KEYPAIR}
 
 ```bash
 # Environment variables
-az login
-ANS_KEYPAIR="azurkeytest"
-AWS_REGION="northeurope"
-AZ_RG="mysshkey"
+PATH="$PATH:/usr/local/bin"
+ANS_KEYPAIR="petclinic-ansible-test-dev.key"
+AWS_REGION="us-east-1"
 export ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Create key pair for Ansible
-ssh-keygen -m PEM -t rsa -b 2048 -f ${WORKSPACE}/${ANS_KEYPAIR} || chmod 400 ${ANS_KEYPAIR}
-az sshkey create --location ${AWS_REGION} --resource-group ${AZ_RG} --name ${ANS_KEYPAIR} -y
-
+aws ec2 create-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR} --query "KeyMaterial" --output text > ${ANS_KEYPAIR}
+chmod 400 ${ANS_KEYPAIR}
 # Create infrastructure for kubernetes
 cd infrastructure/dev-k8s-terraform
-# sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
 terraform init
-terraform apply -var-file="variables.tfvars" -auto-approve -no-color
+terraform apply -auto-approve -no-color
 # Install k8s cluster on the infrastructure
-ansible-playbook -i ${WORKSPACE}/ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml
+ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml
 # Build, Deploy, Test the application
 # Tear down the k8s infrastructure
 cd infrastructure/dev-k8s-terraform
-terraform destroy -var-file="variables.tfvars" -auto-approve -no-color
-
+terraform destroy -auto-approve -no-color
 # Delete key pair
-az sshkey delete --resource-group ${AZ_RG} --name ${ANS_KEYPAIR} -y
+aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}
 rm -rf ${ANS_KEYPAIR}
-rm -rf ${ANS_KEYPAIR}.pub
 ```
-~/petclinic-nightly/azurkey.pub"
 
 - Commit the change, then push the script to the remote repo.
 
@@ -1957,7 +1893,7 @@ IMAGE_TAG_ADMIN_SERVER: "${IMAGE_TAG_ADMIN_SERVER}"
 IMAGE_TAG_HYSTRIX_DASHBOARD: "${IMAGE_TAG_HYSTRIX_DASHBOARD}"
 IMAGE_TAG_GRAFANA_SERVICE: "${IMAGE_TAG_GRAFANA_SERVICE}"
 IMAGE_TAG_PROMETHEUS_SERVICE: "${IMAGE_TAG_PROMETHEUS_SERVICE}"
-DNS_NAME: "www.devopsturkiye.com" # create your dns name 
+DNS_NAME: "DNS Name of your application"
 ```
 
 ### Set up a Helm v3 chart repository in Amazon S3
@@ -1967,21 +1903,119 @@ DNS_NAME: "www.devopsturkiye.com" # create your dns name
 * Create an ``S3 bucket`` for Helm charts. In the bucket, create a ``folder`` called ``stable/myapp``. The example in this pattern uses s3://petclinic-helm-charts-<put-your-name>/stable/myapp as the target chart repository.
 
 ```bash
-cd k8s
+aws s3api create-bucket --bucket petclinic-helm-charts-<put-your-name> --region us-east-1
+aws s3api put-object --bucket petclinic-helm-charts-<put-your-name> --key stable/myapp/
 ```
-ACR_NAME="helmchart"
-USER_NAME="helmchart"
 
-helm registry login $ACR_NAME.azurecr.io \
-  --username $USER_NAME \
-  --password KBXRGYu6llxrUO+9ABBKbBEznN7OgyL5keSD6YaXJ5+ACRCQs7Mi
-helm create petclinic_chart
-helm package etclinic_chart
-helm push hello-world-0.1.0.tgz oci://$ACR_NAME.azurecr.io/helm
+* Install the helm-s3 plugin for Amazon S3.
 
-helm pull oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
+```bash
+helm plugin install https://github.com/hypnoglow/helm-s3.git
+```
 
-az acr repository delete --name $ACR_NAME --image helm/hello-world:0.1.0
+* On some systems we need to install ``Helm S3 plugin`` as Jenkins user to be able to use S3 with pipeline script.
+
+``` bash
+sudo su -s /bin/bash jenkins
+export PATH=$PATH:/usr/local/bin
+helm version
+helm plugin install https://github.com/hypnoglow/helm-s3.git
+exit
+``` 
+
+* ``Initialize`` the Amazon S3 Helm repository.
+
+```bash
+AWS_REGION=us-east-1 helm s3 init s3://petclinic-helm-charts-<put-your-name>/stable/myapp 
+```
+
+* The command creates an ``index.yaml`` file in the target to track all the chart information that is stored at that location.
+
+* Verify that the ``index.yaml`` file was created.
+
+```bash
+aws s3 ls s3://petclinic-helm-charts-<put-your-name>/stable/myapp/
+```
+
+* Add the Amazon S3 repository to Helm on the client machine. 
+
+```bash
+helm repo ls
+AWS_REGION=us-east-1 helm repo add stable-petclinicapp s3://petclinic-helm-charts-<put-your-name>/stable/myapp/
+```
+
+* Update `version` and `appVersion` field of `k8s/petclinic_chart/Chart.yaml` file as below for testing.
+
+```yaml
+version: 0.0.1
+appVersion: 0.1.0
+```
+
+* ``Package`` the local Helm chart.
+
+```bash
+cd k8s
+helm package petclinic_chart/ 
+```
+
+* Store the local package in the Amazon S3 Helm repository.
+
+```bash
+HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-0.0.1.tgz stable-petclinicapp
+```
+
+* Search for the Helm chart.
+
+```bash
+helm search repo stable-petclinicapp
+```
+
+* You get an output as below.
+
+```bash
+NAME                                    CHART VERSION   APP VERSION     DESCRIPTION                
+stable-petclinicapp/petclinic_chart     0.0.1           0.1.0           A Helm chart for Kubernetes
+```
+
+* In ``Chart.yaml``, ``set`` the `version` value to `0.0.2` in Chart.yaml, and then package the chart, this time changing the version in Chart.yaml to 0.0.2. Version control is ideally achieved through automation by using tools like GitVersion or Jenkins build numbers in a CI/CD pipeline. 
+
+```bash
+helm package petclinic_chart/
+```
+
+* Push the new version to the Helm repository in Amazon S3.
+
+```bash
+HELM_S3_MODE=3 AWS_REGION=us-east-1 helm s3 push ./petclinic_chart-0.0.2.tgz stable-petclinicapp
+```
+
+* Verify the updated Helm chart.
+
+```bash
+helm repo update
+helm search repo stable-petclinicapp
+```
+
+* You get an ``output`` as below.
+
+```bash
+NAME                                    CHART VERSION   APP VERSION     DESCRIPTION                
+stable-petclinicapp/petclinic_chart     0.0.2           0.1.0           A Helm chart for Kubernetes
+```
+
+* To view all the available versions of a chart execute following command.
+
+```bash
+helm search repo stable-petclinicapp --versions
+```
+
+* Output:
+
+```bash
+NAME                                    CHART VERSION   APP VERSION     DESCRIPTION                
+stable-petclinicapp/petclinic_chart     0.0.2           0.1.0           A Helm chart for Kubernetes
+stable-petclinicapp/petclinic_chart     0.0.1           0.1.0           A Helm chart for Kubernetes
+```
 
 * In ``Chart.yaml``, ``set`` the `version` value to `HELM_VERSION` in Chart.yaml for automation in jenkins pipeline.
 
@@ -2011,7 +2045,7 @@ git checkout feature/msp-18
 - Prepare a script to ``package`` the app with maven Docker container and save it as `package-with-maven-container.sh` and save it under `jenkins` folder.
 
 ```bash
-docker run --rm -v $HOME/.m2:/root/.m2 -v $WORKSPACE:/app -w /app maven:3.8-openjdk-11 mvn clean package
+docker run --rm -v $HOME/.m2:/root/.m2 -v $WORKSPACE:/app -w /app maven:3.6-openjdk-11 mvn clean package
 ```
 
 - Prepare a script to create ``ECR tags`` for the dev docker images and save it as `prepare-tags-ecr-for-dev-docker-images.sh` and save it under `jenkins` folder.
@@ -2056,10 +2090,18 @@ docker build --force-rm -t "${IMAGE_TAG_PROMETHEUS_SERVICE}" "${WORKSPACE}/docke
 
 ```bash
 # Provide credentials for Docker to login the AWS ECR and push the images
-ACR_NAME="yakindockerimage"
-PASSWORD="NyRCXCW430XMZXXNx1S220LxMPye1A2fT+/M4YTgyS+ACRDwei4F"
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY} 
 
-az acr login --name $ACR_NAME | docker login $ACR_NAME.azurecr.io -u $$ACR_NAME  -p $PASSWORD 
+az acr login --name yakinpetclinicdockerimage | docker login --username yakinpetclinicdockerimage --password-stdin yakinpetclinicdockerimage.azurecr.io
+az acr login --name yakinpetclinicdockerimage | docker login --username yakinpetclinicdockerimage --password xv0fJcaca8v1TZj+mM3/vmlC1sI96vkSR7xqbrvBBw+ACRD7enOB
+docker login --password-stdin yakinpetclinicdockerimage.azurecr.io
+
+az acr credential-set create -r yakinpetclinicdockerimage -n yakinpetclinicdockerimage -l docker.io -u dockerimage -p Docker0101
+
+az acr create --name yakinpetclinicdockerimage --resource-group dockerimage --sku Basic --location northeurope --admin-enabled true
+                            az acr create --name $AACR_REPO_NAME \
+                            --resource-group $ACR_RESOURCE_GROUP \
+                            --sku Basic --location $AZ_REGION
 
 docker push "${IMAGE_TAG_ADMIN_SERVER}"
 docker push "${IMAGE_TAG_API_GATEWAY}"
@@ -2098,9 +2140,8 @@ git push --set-upstream origin feature/msp-18
 ```bash
 PATH="$PATH:/usr/local/bin"
 APP_REPO_NAME="clarusway-repo/petclinic-app-dev" # Write your own repo name
-AWS_REGION="northeurope" #Update this line if you work on another region
-ECR_REGISTRY="yakindockerimage.azurecr.io" # Replace this line with your ECR name
-
+AWS_REGION="us-east-1" #Update this line if you work on another region
+ECR_REGISTRY="046402772087.dkr.ecr.us-east-1.amazonaws.com" # Replace this line with your ECR name
 aws ecr create-repository \
     --repository-name ${APP_REPO_NAME} \
     --image-scanning-configuration scanOnPush=false \
@@ -2122,7 +2163,7 @@ aws ecr create-repository \
 
   - name: Create .docker folder
     file:
-      path: /home/azureuser/.docker
+      path: /home/ubuntu/.docker
       state: directory
       mode: '0755'
 
@@ -2130,7 +2171,7 @@ aws ecr create-repository \
     become: yes
     copy: 
       src: $JENKINS_HOME/.docker/config.json
-      dest: /home/azureuser/.docker/config.json
+      dest: /home/ubuntu/.docker/config.json
 
   - name: deploy petclinic application
     shell: |
@@ -2138,7 +2179,7 @@ aws ecr create-repository \
       kubectl create ns petclinic-dev
       kubectl delete secret regcred -n petclinic-dev || true
       kubectl create secret generic regcred -n petclinic-dev \
-        --from-file=.dockerconfigjson=/home/azureuser/.docker/config.json \
+        --from-file=.dockerconfigjson=/home/ubuntu/.docker/config.json \
         --type=kubernetes.io/dockerconfigjson
       AWS_REGION=$AWS_REGION helm repo add stable-petclinic s3://petclinic-helm-charts-<put-your-name>/stable/myapp/
       AWS_REGION=$AWS_REGION helm repo update
@@ -2208,7 +2249,6 @@ git commit -m 'added scripts for running dummy selenium job'
 git push --set-upstream origin feature/msp-18
 ```
 
-geçti buraları
 - Create a Jenkins job with name of `test-running-dummy-selenium-job` to check the setup for selenium tests by running dummy selenium job on `feature/msp-18` branch.
 
 ```yml
@@ -2264,7 +2304,7 @@ pipeline {
         APP_NAME="petclinic"
         APP_REPO_NAME="clarusway-repo/${APP_NAME}-app-dev"
         AWS_ACCOUNT_ID=sh(script:'aws sts get-caller-identity --query Account --output text', returnStdout:true).trim()
-        AWS_REGION="northeurope"
+        AWS_REGION="us-east-1"
         ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         ANS_KEYPAIR="petclinic-${APP_NAME}-dev-${BUILD_NUMBER}.key"
         ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
@@ -2508,7 +2548,7 @@ eksctl version
 - Download the Amazon EKS vended kubectl binary.
 
 ```bash
-curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.27.7/2023-11-14/bin/linux/amd64/kubectl
+curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.4/2023-05-11/bin/linux/amd64/kubectl
 ```
 
 - Apply execute permissions to the binary.
@@ -2564,7 +2604,7 @@ eksctl create cluster -f cluster.yaml
 
 ```bash
 export PATH=$PATH:$HOME/bin
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
 ```
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -2591,7 +2631,7 @@ git checkout feature/msp-20
 ```bash
 PATH="$PATH:/usr/local/bin"
 APP_REPO_NAME="clarusway-repo/petclinic-app-qa"
-AWS_REGION="northeurope"
+AWS_REGION="us-east-1"
 
 aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
 aws ecr create-repository \
@@ -2719,7 +2759,7 @@ PATH="$PATH:/usr/local/bin:$HOME/bin"
 APP_NAME="petclinic"
 APP_REPO_NAME="clarusway-repo/petclinic-app-qa"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-export AWS_REGION="northeurope"
+export AWS_REGION="us-east-1"
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 echo 'Packaging the App into Jars with Maven'
 . ./jenkins/package-with-maven-container.sh
@@ -2780,7 +2820,7 @@ pipeline {
         APP_NAME="petclinic"
         APP_REPO_NAME="clarusway-repo/petclinic-app-qa"
         AWS_ACCOUNT_ID=sh(script:'export PATH="$PATH:/usr/local/bin" && aws sts get-caller-identity --query Account --output text', returnStdout:true).trim()
-        AWS_REGION="northeurope"
+        AWS_REGION="us-east-1"
         ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
     stages {
