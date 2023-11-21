@@ -2,25 +2,30 @@ pipeline {
     agent any
     environment {
         APP_NAME="petclinic"
-        APP_REPO_NAME="clarusway-repo/${APP_NAME}-app-dev"
-        AWS_ACCOUNT_ID=sh(script:'aws sts get-caller-identity --query Account --output text', returnStdout:true).trim()
-        AWS_REGION="northeurope"
-        ECR_REGISTRY="stablepetclinic"
+        ACR_REPO_NAME="yakin${APP_NAME}dockerimage"
+        AZ_REGION="northeurope"
+        ACR_REGISTRY="${ACR_REPO_NAME}.azurecr.io"
+        ACR_RESOURCE_GROUP="Azure-jenkins-server-project" # Kaynak grubu adınıza göre güncelleyin
         ANS_KEYPAIR="petclinic-${APP_NAME}-dev-${BUILD_NUMBER}.key"
         ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
         ANSIBLE_HOST_KEY_CHECKING="False"
+
     }
     stages {
         stage('Create ECR Repo') {
             steps {
                 echo "Creating ECR Repo for ${APP_NAME} app"
                 sh '''
-                aws ecr describe-repositories --region ${AWS_REGION} --repository-name ${APP_REPO_NAME} || \
-                         aws ecr create-repository \
-                         --repository-name ${APP_REPO_NAME} \
-                         --image-scanning-configuration scanOnPush=true \
-                         --image-tag-mutability MUTABLE \
-                         --region ${AWS_REGION}
+                    az login --use-device-code
+
+                    az acr show --name $ACR_NAME \
+                    --resource-group $ACR_RESOURCE_GROUP || \
+                            az acr create --name $ACR_NAME \
+                            --resource-group $ACR_RESOURCE_GROUP \
+                            --sku Basic --location $ACR_REGION
+
+                    az acr login --name $ACR_NAME
+                    docker login ${ACR_REPO_NAME}.azurecr.io"
                 '''
             }
         }
@@ -35,23 +40,23 @@ pipeline {
                 echo 'Preparing Tags for Docker Images'
                 script {
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-admin-server/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_ADMIN_SERVER="${ECR_REGISTRY}/${APP_REPO_NAME}:admin-server-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_ADMIN_SERVER="${ACR_REGISTRY}/${ACR_REPO_NAME}:admin-server-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-api-gateway/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_API_GATEWAY="${ECR_REGISTRY}/${APP_REPO_NAME}:api-gateway-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_API_GATEWAY="${ACR_REGISTRY}/${ACR_REPO_NAME}:api-gateway-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-config-server/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_CONFIG_SERVER="${ECR_REGISTRY}/${APP_REPO_NAME}:config-server-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_CONFIG_SERVER="${ACR_REGISTRY}/${ACR_REPO_NAME}:config-server-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-customers-service/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_CUSTOMERS_SERVICE="${ECR_REGISTRY}/${APP_REPO_NAME}:customers-service-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_CUSTOMERS_SERVICE="${ACR_REGISTRY}/${ACR_REPO_NAME}:customers-service-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-discovery-server/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_DISCOVERY_SERVER="${ECR_REGISTRY}/${APP_REPO_NAME}:discovery-server-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_DISCOVERY_SERVER="${ACR_REGISTRY}/${ACR_REPO_NAME}:discovery-server-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-hystrix-dashboard/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_HYSTRIX_DASHBOARD="${ECR_REGISTRY}/${APP_REPO_NAME}:hystrix-dashboard-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_HYSTRIX_DASHBOARD="${ACR_REGISTRY}/${ACR_REPO_NAME}:hystrix-dashboard-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-vets-service/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_VETS_SERVICE="${ECR_REGISTRY}/${APP_REPO_NAME}:vets-service-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_VETS_SERVICE="${ACR_REGISTRY}/${ACR_REPO_NAME}:vets-service-v${MVN_VERSION}-b${BUILD_NUMBER}"
                     MVN_VERSION=sh(script:'. ${WORKSPACE}/spring-petclinic-visits-service/target/maven-archiver/pom.properties && echo $version', returnStdout:true).trim()
-                    env.IMAGE_TAG_VISITS_SERVICE="${ECR_REGISTRY}/${APP_REPO_NAME}:visits-service-v${MVN_VERSION}-b${BUILD_NUMBER}"
-                    env.IMAGE_TAG_GRAFANA_SERVICE="${ECR_REGISTRY}/${APP_REPO_NAME}:grafana-service"
-                    env.IMAGE_TAG_PROMETHEUS_SERVICE="${ECR_REGISTRY}/${APP_REPO_NAME}:prometheus-service"
+                    env.IMAGE_TAG_VISITS_SERVICE="${ACR_REGISTRY}/${ACR_REPO_NAME}:visits-service-v${MVN_VERSION}-b${BUILD_NUMBER}"
+                    env.IMAGE_TAG_GRAFANA_SERVICE="${ACR_REGISTRY}/${ACR_REPO_NAME}:grafana-service"
+                    env.IMAGE_TAG_PROMETHEUS_SERVICE="${ACR_REGISTRY}/${ACR_REPO_NAME}:prometheus-service"
                 }
             }
         }
@@ -71,7 +76,7 @@ pipeline {
         stage('Create Key Pair for Ansible') {
             steps {
                 echo "Creating Key Pair for ${APP_NAME} App"
-                sh "aws ec2 create-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR} --query KeyMaterial --output text > ${ANS_KEYPAIR}"
+                sh "aws ec2 create-key-pair --region ${AZ_REGION} --key-name ${ANS_KEYPAIR} --query KeyMaterial --output text > ${ANS_KEYPAIR}"
                 sh "chmod 400 ${ANS_KEYPAIR}"
             }
         }
@@ -119,7 +124,7 @@ pipeline {
             steps {
                 echo "Check if the ${APP_NAME} app is ready or not"
                 script {
-                    env.MASTER_PUBLIC_IP = sh(script:"aws ec2 describe-instances --region ${AWS_REGION} --filters Name=tag-value,Values=master Name=tag-value,Values=tera-kube-ans Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[PublicIpAddress] --output text", returnStdout:true).trim()
+                    env.MASTER_PUBLIC_IP = sh(script:"aws ec2 describe-instances --region ${AZ_REGION} --filters Name=tag-value,Values=master Name=tag-value,Values=tera-kube-ans Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[PublicIpAddress] --output text", returnStdout:true).trim()
                     while(true) {
                         try{
                             sh "curl -s ${MASTER_PUBLIC_IP}:30001"
@@ -150,8 +155,8 @@ pipeline {
             echo 'Delete the Image Repository on ECR'
             sh """
                 aws ecr delete-repository \
-                  --repository-name ${APP_REPO_NAME} \
-                  --region ${AWS_REGION}\
+                  --repository-name ${ACR_REPO_NAME} \
+                  --region ${AZ_REGION}\
                   --force
                 """
             echo 'Tear down the Kubernetes Cluster'
@@ -160,7 +165,7 @@ pipeline {
             terraform destroy -auto-approve -no-color
             """
             echo "Delete existing key pair using AWS CLI"
-            sh "aws ec2 delete-key-pair --region ${AWS_REGION} --key-name ${ANS_KEYPAIR}"
+            sh "aws ec2 delete-key-pair --region ${AZ_REGION} --key-name ${ANS_KEYPAIR}"
             sh "rm -rf ${ANS_KEYPAIR}"
         }
     }
