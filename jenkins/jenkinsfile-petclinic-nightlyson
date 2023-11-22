@@ -60,5 +60,18 @@ pipeline {
                 }
             }
         }
+        stage('Build App Docker Images') {
+            steps {
+                echo 'Building App Dev Images'
+                sh ". ./jenkins/build-dev-docker-images-for-ecr.sh"
+                sh 'docker image ls'
+            }
+        }
+        stage('Push Images to ECR Repo') {
+            steps {
+                echo "Pushing ${APP_NAME} App Images to ECR Repo"
+                sh ". ./jenkins/push-dev-docker-images-to-ecr.sh"
+            }
+        }  
     }
 }

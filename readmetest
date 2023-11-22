@@ -88,4 +88,33 @@ helm push petclinic-0.1.0.tgz oci://stablepetclinic.azurecr.io/petclinic
 
 
  | docker login $ACR_NAME.azurecr.io -u $USER_NAME  -p $PASSWORD
+ az acr login --name $ACR_REPO_NAME
+
+
+ docker push yakinpetclinicdockerimage.azurecr.io/test/spring-petclinic-api-gateway
+
+ docker tag spring-petclinic-api-gateway yakinpetclinicdockerimage.azurecr.io/test/spring-petclinic-api-gateway
+
+
+// Azure CLI kullanarak sanal makineleri listele ve ilgili bilgileri elde et
+def vmInfo = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --query "[].{Name:name, Id:id}" --output json', returnStdout: true).trim()
+def vmId = // buradan uygun bir şekilde VM Id'sini alın, bu örnekte biraz JSON ayrıştırma yapmanız gerekebilir
+
+// Azure CLI kullanarak belirli bir sanal makinenin durumunu bekleyin
+sh "az vm wait --id $vmId --custom ''"
+
+az vm list --resource-group Azure-jenkins-server-project --query "[].{Name:name, Id:id}" --output json', returnStdout: true.trim()
+
+"powerState": "VM running"   -  "powerState": "VM deallocated"
+    "tags": {
+      "tagtagtag": "gatgat"
+
+az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?powerState=='VM running'].{Name:name, ResourceGroup:resourceGroup}" --output table
+az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'kirmizi'].{Name:name, ResourceGroup:resourceGroup}" --output table
+az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'kirmizi'].{Name:name, ResourceGroup:resourceGroup, Id:id}" --output table
+az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'kirmizi'].id" --output table
+
+idili = az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'kirmizi'].id" --output table
+az vm wait --custom instanceView.statuses[?code=='PowerState/running']  --ids $id
+
 
