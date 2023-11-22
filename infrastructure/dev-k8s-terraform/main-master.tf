@@ -39,7 +39,7 @@ resource "azurerm_linux_virtual_machine" "kube-master" {
 }
 
 resource "azurerm_role_definition" "proje_kube_full_role" {
-  name        = "VM-FullAccessRole"
+  name        = "master_FullAccessRole"
   description = "IAM role for full access to all resources"
   scope       = "/subscriptions/88bbc84a-2800-40f2-b985-be5418274086"
   permissions {
