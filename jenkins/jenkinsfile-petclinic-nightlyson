@@ -23,8 +23,6 @@ pipeline {
                             az acr create --name $ACR_REPO_NAME \
                             --resource-group $ACR_RESOURCE_GROUP \
                             --sku Basic --location $AZ_REGION --admin-enabled true
-
-                    
                     
                 '''
             }
@@ -72,6 +70,34 @@ pipeline {
                 echo "Pushing ${APP_NAME} App Images to ECR Repo"
                 sh ". ./jenkins/push-dev-docker-images-to-ecr.sh"
             }
-        }  
+        } 
+
+        stage('Create Key Pair for Ansible') {
+            steps {
+                echo "Creating Key Pair for ${APP_NAME} App"
+                sh '''
+                ssh-keygen -m PEM -t rsa -b 2048 -f  -N "" ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}
+                chmod 400 ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}
+                '''
+            }
+        }        
+
+        stage('Create QA Automation Infrastructure') {
+            steps {
+                echo 'Creating QA Automation Infrastructure for Dev Environment'
+                sh """
+                    cd infrastructure/dev-k8s-terraform
+                    sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
+                    terraform init
+                    terraform apply -var-file="variables.tfvars" -auto-approve -no-color
+                """
+                script {
+                    echo "Kubernetes Master is not UP and running yet."
+                    env.id = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'master'].id" --output tsv', returnStdout:true).trim()
+                    sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $id'
+                }
+            }
+        }       
+
     }
 }
