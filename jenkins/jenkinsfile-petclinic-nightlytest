@@ -76,8 +76,8 @@ pipeline {
             steps {
                 echo "Creating Key Pair for ${APP_NAME} App"
                 sh '''
-                ssh-keygen -m PEM -t rsa -b 2048 -f ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}
-                chmod 400 ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR} -N "" 
+                ssh-keygen -m PEM -t rsa -b 2048 -f ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR} -N ""
+                chmod 400 ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR} 
                 '''
             }
         }        
