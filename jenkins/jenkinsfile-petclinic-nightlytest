@@ -93,7 +93,7 @@ pipeline {
                 """
                 script {
                     echo "Kubernetes Master is not UP and running yet."
-                    env.id = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'kirmizi'].id" --output tsv', returnStdout:true).trim()
+                    env.id = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'master'].id" --output tsv', returnStdout:true).trim()
                     sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $id'
                 }
             }
