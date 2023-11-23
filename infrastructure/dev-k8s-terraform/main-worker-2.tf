@@ -28,7 +28,7 @@ resource "azurerm_linux_virtual_machine" "worker-2" {
   tags = {
     Name        = "worker-2"
     Project     = "tera-kube-ans"
-    Role        = "master"
+    Role        = "worker"
     Id          = "1"
     environment = "dev"
   }
