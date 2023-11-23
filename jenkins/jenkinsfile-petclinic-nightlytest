@@ -93,8 +93,7 @@ pipeline {
                 """
                script {
                     echo "Kubernetes Master is not UP and running yet."
-                    env.id = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?contains(tags.Project, 'tera-kube-ans')].id" --output tsv', returnStdout:true).trim()
-                    sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $id'
+                    sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)'
                 }                  
             }
         }       
