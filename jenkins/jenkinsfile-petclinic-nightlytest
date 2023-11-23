@@ -93,7 +93,7 @@ pipeline {
                 """
                script {
                     echo "Kubernetes Master is not UP and running yet."
-                    sh 'az vm wait --custom instanceView.statuses[?code=="PowerState/running"] --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)'
+                    sh 'az vm wait --resource-group project-kube-claster-worker --name kube-master --created'
                 }                  
             }
         }       
@@ -104,6 +104,30 @@ pipeline {
                 sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml"
             }
         }
-
     }
+
+    post {
+        always {
+            echo 'Deleting all local images'
+            sh 'docker image prune -af'
+        }
+
+        failure {
+
+            echo 'Delete the Image Repository on ECR due to the Failure'
+            sh "az acr delete -n ${APP_REPO_NAME} -g ${ACR_RESOURCE_GROUP} -y"
+
+            echo 'Deleting Terraform Stack due to the Failure'
+            sh """
+                cd infrastructure/dev-k8s-terraform
+                terraform destroy -var-file="variables.tfvars" --auto-approve -no-color
+            """
+
+            echo "Delete existing key pair "
+            sh """
+                cd infrastructure/dev-k8s-terraform
+                rm -rf ${ANS_KEYPAIR}*
+            """
+        }
+    }    
 }

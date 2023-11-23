@@ -130,3 +130,4 @@ az vm list-ip-addresses -g Azure-jenkins-server-project -n Azure-Development-Ser
 az vm list-ip-addresses --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)
 
 project-kube-claster-worker
+                    sh 'az vm wait --custom instanceView.statuses[?code=="PowerState/running"] --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)'
