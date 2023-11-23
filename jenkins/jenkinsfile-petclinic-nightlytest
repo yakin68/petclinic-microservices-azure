@@ -93,7 +93,7 @@ pipeline {
                 """
                script {
                     echo "Kubernetes Master is not UP and running yet."
-                    sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)'
+                    sh 'az vm wait --custom instanceView.statuses[?code=="PowerState/running"] --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)'
                 }                  
             }
         }       
