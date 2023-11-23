@@ -105,6 +105,22 @@ pipeline {
                 sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml"
             }
         }
+
+        stage('Destroy the infrastructure'){
+            steps{
+                timeout(time:5, unit:'DAYS'){
+                    input message:'Approve terminate'
+                }
+                sh """
+                    docker image prune -af
+                    az acr delete --name $ACR_REPO_NAME --yes
+                    rm -f ${ANS_KEYPAIR}*
+                    cd infrastructure/dev-k8s-terraform
+                    terraform destroy -var-file="variables.tfvars" --auto-approve -no-color
+                    rm -f ${ANS_KEYPAIR}*
+                """
+            }
+        }        
     }
 
     post {
