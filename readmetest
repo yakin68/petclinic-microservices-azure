@@ -116,5 +116,5 @@ az vm list --resource-group Azure-jenkins-server-project --show-details --query 
 
 idili = az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'kirmizi'].id" --output table
 az vm wait --custom instanceView.statuses[?code=='PowerState/running']  --ids $id
-
+az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'master' ].id" --output tsv
 
