@@ -16,7 +16,7 @@ pipeline {
             steps {
                 echo "Creating ECR Repo for ${APP_NAME} app"
                 sh '''
-                    // az login --use-device-code
+                    az login --use-device-code
 
                     az acr show --name $ACR_REPO_NAME \
                     --resource-group $ACR_RESOURCE_GROUP || \
