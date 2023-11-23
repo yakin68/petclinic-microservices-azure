@@ -22,11 +22,11 @@
         --type=kubernetes.io/dockerconfigjson
 
 
-      helm registry login stablepetclinic.azurecr.io \
-        --username stablepetclinic \
-        --password LA7abcvNvfivBhqglEsAz/kEDB1b6c0Vq9/sa1nQPa+ACRDLKpRn
+      helm registry login helmchartrepo.azurecr.io \
+        --username helmchartrepo \
+        --password fo+P1uVVyyxyJL7XyZDnsgt0WuDQtZV9S16jquLNm5+ACRCbfyLm
 
-      helm upgrade --install petclinicapprelease  oci://stablepetclinic.azurecr.io/petclinic/petclinic --version ${BUILD_NUMBER} --namespace petclinicdev
+      helm upgrade --install petclinicapprelease  oci://helmchartrepo.azurecr.io/helmchartrepo --version ${BUILD_NUMBER} --namespace petclinicdev
 
 
   
