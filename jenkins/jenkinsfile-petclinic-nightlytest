@@ -91,8 +91,20 @@ pipeline {
                     terraform init
                     terraform apply -var-file="variables.tfvars" -auto-approve -no-color
                 """
+               script {
+                    echo "Kubernetes Master is not UP and running yet."
+                    env.id = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'master'].id" --output tsv', returnStdout:true).trim()
+                    sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $id'
+                }                  
             }
         }       
+
+        stage('Create Kubernetes Cluster for QA Automation Build') {
+            steps {
+                echo "Setup Kubernetes cluster for ${APP_NAME} App"
+                sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml"
+            }
+        }
 
     }
 }
