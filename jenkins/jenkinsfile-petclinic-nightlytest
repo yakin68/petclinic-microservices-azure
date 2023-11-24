@@ -3,8 +3,13 @@ pipeline {
     environment {
         APP_NAME="petclinic"
         ACR_REPO_NAME="yakin${APP_NAME}dockerimage"
+        ACR_REPO_HELM_NAME="helmchartrepo"
+
         AZ_REGION="northeurope"
+
         ACR_REGISTRY="${ACR_REPO_NAME}.azurecr.io"
+        ACR_REGISTRY_HELM="${ACR_REPO_HELM_NAME}.azurecr.io"
+
         ACR_RESOURCE_GROUP="dockerimage"
         ANS_KEYPAIR="petclinic-${APP_NAME}-dev-${BUILD_NUMBER}.key"
         ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
@@ -106,6 +111,24 @@ pipeline {
             }
         }
 
+        stage('Deploy App on Kubernetes cluster'){
+            steps {
+                echo 'Deploying App on Kubernetes'
+                sh "envsubst < k8s/petclinic_chart/values-template.yaml > k8s/petclinic_chart/values.yaml"
+                sh "sed -i s/HELM_VERSION/${BUILD_NUMBER}/ k8s/petclinic_chart/Chart.yaml"
+                sh """
+                    helm registry login ${ACR_REGISTRY_HELM} \
+                        --username ${ACR_REPO_HELM_NAME} \
+                        --password fo+P1uVVyyxyJL7XyZDnsgt0WuDQtZV9S16jquLNm5+ACRCbfyLm
+                    helm package k8s/petclinic_chart
+                    helm push petclinic_chart-${BUILD_NUMBER}.tgz oci://$ACR_NAME.azurecr.io/stable-petclinic
+                """    
+                sh "envsubst < ansible/playbooks/dev-petclinic-deploy-template > ansible/playbooks/dev-petclinic-deploy.yaml"
+                sh "sleep 60"    
+                sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
+            }
+        }
+            
         stage('Destroy the infrastructure'){
             steps{
                 timeout(time:5, unit:'DAYS'){
