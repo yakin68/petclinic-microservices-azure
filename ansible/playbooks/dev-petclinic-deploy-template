@@ -15,18 +15,11 @@
 
   - name: deploy petclinic application
     shell: |
-      helm registry login helmchartrepo.azurecr.io \
-        --username helmchartrepo \
-        --password fo+P1uVVyyxyJL7XyZDnsgt0WuDQtZV9S16jquLNm5+ACRCbfyLm
-
       kubectl create ns petclinicdev
       kubectl delete secret regcred -n petclinicdev || true
       kubectl create secret generic regcred -n petclinicdev \
         --from-file=.dockerconfigjson=/home/azureuser/.docker/config.json \
         --type=kubernetes.io/dockerconfigjson
-
-      helm install petclinicapprelease  oci://helmchartrepo.azurecr.io/stable-petclinic --version ${BUILD_NUMBER} --namespace petclinicdev
-      helm get manifest petclinicapprelease
 
   
 
