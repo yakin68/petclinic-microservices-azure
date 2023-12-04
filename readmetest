@@ -86,3 +86,14 @@ helm registry login stablepetclinic.azurecr.io \
 
 helm push petclinic-0.1.0.tgz oci://stablepetclinic.azurecr.io/petclinic
 
+
+USER_NAME="helmtoken"
+PASSWORD=$(az acr token create -n $USER_NAME -r $ACR_NAME --scope-map _repositories_admin --only-show-errors --query "credentials.passwords[0].value" -o tsv)
+helm registry login $ACR_NAME.azurecr.io \
+  --username $USER_NAME \
+  --password $PASSWORD
+
+helm pull myregisry/ingress-nginx
+ls *.tgz
+az acr login --name $ACR_NAME
+helm push ingress-nginx-3.20.1.tgz oci://$ACR_NAME.azurecr.io/helm
