@@ -3,14 +3,14 @@ pipeline {
     environment {
         APP_NAME="petclinic"
         ACR_REPO_NAME="yakin${APP_NAME}dockerimage"
-        ACR_REPO_HELM_NAME="helmchartrepo"
+        ACR_REPO_HELM_NAME="helmchart"
 
         AZ_REGION="northeurope"
 
         ACR_REGISTRY="${ACR_REPO_NAME}.azurecr.io"
         ACR_REGISTRY_HELM="${ACR_REPO_HELM_NAME}.azurecr.io"
 
-        ACR_RESOURCE_GROUP="dockerimage"
+        ACR_RESOURCE_GROUP="docker-helmchart"
         ANS_KEYPAIR="petclinic-${APP_NAME}-dev-${BUILD_NUMBER}.key"
         ANSIBLE_PRIVATE_KEY_FILE="${WORKSPACE}/${ANS_KEYPAIR}"
         ANSIBLE_HOST_KEY_CHECKING="False"
@@ -21,14 +21,22 @@ pipeline {
             steps {
                 echo "Creating ECR Repo for ${APP_NAME} app"
                 sh '''
-                    az login --use-device-code
+                    az config set core.allow_broker=true
+                    az account clear
+                    az login
 
                     az acr show --name $ACR_REPO_NAME \
                     --resource-group $ACR_RESOURCE_GROUP || \
                             az acr create --name $ACR_REPO_NAME \
                             --resource-group $ACR_RESOURCE_GROUP \
                             --sku Basic --location $AZ_REGION --admin-enabled true
-                    
+
+                    az acr show --name $ACR_REPO_HELM_NAME \
+                    --resource-group $ACR_RESOURCE_GROUP || \
+                            az acr create --name $ACR_REPO_HELM_NAME \
+                            --resource-group $ACR_RESOURCE_GROUP \
+                            --sku Basic --location $AZ_REGION --admin-enabled true
+
                 '''
             }
         }
