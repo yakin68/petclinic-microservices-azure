@@ -92,7 +92,7 @@ git clone https://github.com/clarusway/petclinic-microservices-with-db.git
 * Change your working directory to **petclinic-microservices** and delete the **.git** directory.
 
 ```bash
-cd petclinic-microservices-with-db
+cd petclinic-microservices-azure
 rm -rf .git
 ```
 
@@ -1962,7 +1962,7 @@ IMAGE_TAG_ADMIN_SERVER: "${IMAGE_TAG_ADMIN_SERVER}"
 IMAGE_TAG_HYSTRIX_DASHBOARD: "${IMAGE_TAG_HYSTRIX_DASHBOARD}"
 IMAGE_TAG_GRAFANA_SERVICE: "${IMAGE_TAG_GRAFANA_SERVICE}"
 IMAGE_TAG_PROMETHEUS_SERVICE: "${IMAGE_TAG_PROMETHEUS_SERVICE}"
-DNS_NAME: "www.devopsturkiye.com" # create your dns name 
+DNS_NAME: "www.devopsturkiye.store" # create your dns name 
 ```
 
 ### Set up a Helm v3 chart repository in Amazon S3
