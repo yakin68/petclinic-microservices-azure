@@ -131,3 +131,26 @@ az vm list-ip-addresses --ids $(az vm list -g project-kube-claster-worker --quer
 
 project-kube-claster-worker
                     sh 'az vm wait --custom instanceView.statuses[?code=="PowerState/running"] --ids $(az vm list -g project-kube-claster-worker --query "[].id" -o table)'
+
+helm create hello-world
+cd hello-world/templates
+rm -rf *
+cd ..
+helm package .
+USER_NAME="helmtoken"
+PASSWORD=$(az acr token create -n $USER_NAME -r $ACR_NAME --scope-map _repositories_admin --only-show-errors --query "credentials.passwords[0].value" -o tsv)
+helm registry login $ACR_NAME.azurecr.io \
+  --username $USER_NAME \
+  --password $PASSWORD
+helm push hello-world-0.1.0.tgz oci://$ACR_NAME.azurecr.io/helm
+helm install myhelmtest oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
+helm pull oci://$ACR_NAME.azurecr.io/helm/hello-world --version 0.1.0
+
+helm pull myregisry/ingress-nginx
+ls *.tgz
+az acr login --name $ACR_NAME
+helm push ingress-nginx-3.20.1.tgz oci://$ACR_NAME.azurecr.io/helm
+
+                    az config set core.allow_broker=true
+                    az account clear
+                    az login --use-device-code
