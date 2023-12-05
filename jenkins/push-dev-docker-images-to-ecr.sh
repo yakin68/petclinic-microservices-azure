@@ -1,8 +1,4 @@
-ACR_NAME="yakindockerimage"
-USER_NAME="yakindockerimage"
-PASSWORD="NyRCXCW430XMZXXNx1S220LxMPye1A2fT+/M4YTgyS+ACRDwei4F"
-
-az acr login --name $ACR_NAME | docker login $ACR_NAME.azurecr.io -u $USER_NAME  -p $PASSWORD
+az acr login --name $ACR_REPO_NAME
 
 docker push "${IMAGE_TAG_ADMIN_SERVER}"
 docker push "${IMAGE_TAG_API_GATEWAY}"

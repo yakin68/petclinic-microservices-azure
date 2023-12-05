@@ -8,7 +8,7 @@ resource "azurerm_linux_virtual_machine" "worker-2" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/petclinic-nightly/azurkeytest.pub") # SSH anahtarınızın dosya yolunu güncelleyin
+    public_key = file("./azurkeytest.pub") # SSH anahtarınızın dosya yolunu güncelleyin
   }
 
   os_disk {
@@ -28,7 +28,7 @@ resource "azurerm_linux_virtual_machine" "worker-2" {
   tags = {
     Name        = "worker-2"
     Project     = "tera-kube-ans"
-    Role        = "master"
+    Role        = "worker"
     Id          = "1"
     environment = "dev"
   }

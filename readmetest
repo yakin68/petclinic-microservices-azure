@@ -86,6 +86,7 @@ helm registry login stablepetclinic.azurecr.io \
 
 helm push petclinic-0.1.0.tgz oci://stablepetclinic.azurecr.io/petclinic
 
+
 helm create hello-world
 cd hello-world/templates
 rm -rf *

@@ -12,7 +12,7 @@ resource "azurerm_linux_virtual_machine" "kube-master" {
 
   admin_ssh_key {
     username   = "azureuser"
-    public_key = file("~/petclinic-nightly/azurkeytest.pub") # SSH anahtarınızın dosya yolunu güncelleyin
+    public_key = file("./azurkeytest.pub") # SSH anahtarınızın dosya yolunu güncelleyin
   }
 
   os_disk {
@@ -38,8 +38,8 @@ resource "azurerm_linux_virtual_machine" "kube-master" {
   }
 }
 
-resource "azurerm_role_definition" "proje_kube_full_access_role" {
-  name        = "VM-FullAccessRole"
+resource "azurerm_role_definition" "proje_kube_full_role" {
+  name        = "masterFullAccessRole"
   description = "IAM role for full access to all resources"
   scope       = "/subscriptions/88bbc84a-2800-40f2-b985-be5418274086"
   permissions {
@@ -51,7 +51,7 @@ resource "azurerm_role_definition" "proje_kube_full_access_role" {
 
 resource "azurerm_role_assignment" "proje_kube_full_access_assignment" {
   principal_id         = azurerm_linux_virtual_machine.kube-master.identity[0].principal_id
-  role_definition_name = azurerm_role_definition.proje_kube_full_access_role.name
+  role_definition_name = azurerm_role_definition.proje_kube_full_role.name 
   scope                = "/subscriptions/88bbc84a-2800-40f2-b985-be5418274086"
 
 }

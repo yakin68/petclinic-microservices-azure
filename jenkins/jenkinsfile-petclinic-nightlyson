@@ -20,11 +20,9 @@ pipeline {
 
                     az acr show --name $ACR_REPO_NAME \
                     --resource-group $ACR_RESOURCE_GROUP || \
-                            az acr create --name $AACR_REPO_NAME \
+                            az acr create --name $ACR_REPO_NAME \
                             --resource-group $ACR_RESOURCE_GROUP \
                             --sku Basic --location $AZ_REGION --admin-enabled true
-
-                    az acr login --name $ACR_NAME
                     
                 '''
             }
@@ -72,101 +70,34 @@ pipeline {
                 echo "Pushing ${APP_NAME} App Images to ECR Repo"
                 sh ". ./jenkins/push-dev-docker-images-to-ecr.sh"
             }
-        }
+        } 
+
         stage('Create Key Pair for Ansible') {
             steps {
                 echo "Creating Key Pair for ${APP_NAME} App"
-                sh "aws ec2 create-key-pair --region ${AZ_REGION} --key-name ${ANS_KEYPAIR} --query KeyMaterial --output text > ${ANS_KEYPAIR}"
-                sh "chmod 400 ${ANS_KEYPAIR}"
+                sh '''
+                ssh-keygen -m PEM -t rsa -b 2048 -f  -N "" ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}
+                chmod 400 ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}
+                '''
             }
-        }
+        }        
 
         stage('Create QA Automation Infrastructure') {
             steps {
                 echo 'Creating QA Automation Infrastructure for Dev Environment'
                 sh """
                     cd infrastructure/dev-k8s-terraform
-                    sed -i "s/clarus/$ANS_KEYPAIR/g" main.tf
+                    sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
                     terraform init
-                    terraform apply -auto-approve -no-color
+                    terraform apply -var-file="variables.tfvars" -auto-approve -no-color
                 """
                 script {
                     echo "Kubernetes Master is not UP and running yet."
-                    env.id = sh(script: 'aws ec2 describe-instances --filters Name=tag-value,Values=master Name=tag-value,Values=tera-kube-ans Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[InstanceId] --output text',  returnStdout:true).trim()
-                    sh 'aws ec2 wait instance-status-ok --instance-ids $id'
+                    env.id = sh(script: 'az vm list --resource-group Azure-jenkins-server-project --show-details --query "[?tags.values(@)[0] == 'master'].id" --output tsv', returnStdout:true).trim()
+                    sh 'az vm wait --custom "instanceView.statuses[?code=='PowerState/running']" --ids $id'
                 }
             }
-        }
+        }       
 
-
-        stage('Create Kubernetes Cluster for QA Automation Build') {
-            steps {
-                echo "Setup Kubernetes cluster for ${APP_NAME} App"
-                sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml"
-            }
-        }
-
-        stage('Deploy App on Kubernetes cluster'){
-            steps {
-                echo 'Deploying App on Kubernetes'
-                sh "envsubst < k8s/petclinic_chart/values-template.yaml > k8s/petclinic_chart/values.yaml"
-                sh "sed -i s/HELM_VERSION/${BUILD_NUMBER}/ k8s/petclinic_chart/Chart.yaml"
-                sh "helm repo add stable-petclinic s3://petclinic-helm-charts-<put-your-name>/stable/myapp/"
-                sh "helm package k8s/petclinic_chart"
-                sh "helm s3 push --force petclinic_chart-${BUILD_NUMBER}.tgz stable-petclinic"
-                sh "envsubst < ansible/playbooks/dev-petclinic-deploy-template > ansible/playbooks/dev-petclinic-deploy.yaml"
-                sh "sleep 60"    
-                sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
-            }
-        }     
-
-        stage('Test the Application Deployment'){
-            steps {
-                echo "Check if the ${APP_NAME} app is ready or not"
-                script {
-                    env.MASTER_PUBLIC_IP = sh(script:"aws ec2 describe-instances --region ${AZ_REGION} --filters Name=tag-value,Values=master Name=tag-value,Values=tera-kube-ans Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[PublicIpAddress] --output text", returnStdout:true).trim()
-                    while(true) {
-                        try{
-                            sh "curl -s ${MASTER_PUBLIC_IP}:30001"
-                            echo "${APP_NAME} app is successfully deployed."
-                            break
-                        }
-                        catch(Exception){
-                            echo "Could not connect to ${APP_NAME} app"
-                            sleep(5)
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Run QA Automation Tests'){
-            steps {
-                echo "Run the Selenium Functional Test on QA Environment"
-                sh 'ansible-playbook -vvv --connection=local --inventory 127.0.0.1, --extra-vars "workspace=${WORKSPACE} master_public_ip=${MASTER_PUBLIC_IP}" ./ansible/playbooks/pb_run_selenium_jobs.yaml'
-            }
-        }
- }
-
-    post {
-        always {
-            echo 'Deleting all local images'
-            sh 'docker image prune -af'
-            echo 'Delete the Image Repository on ECR'
-            sh """
-                aws ecr delete-repository \
-                  --repository-name ${ACR_REPO_NAME} \
-                  --region ${AZ_REGION}\
-                  --force
-                """
-            echo 'Tear down the Kubernetes Cluster'
-            sh """
-            cd infrastructure/dev-k8s-terraform
-            terraform destroy -auto-approve -no-color
-            """
-            echo "Delete existing key pair using AWS CLI"
-            sh "aws ec2 delete-key-pair --region ${AZ_REGION} --key-name ${ANS_KEYPAIR}"
-            sh "rm -rf ${ANS_KEYPAIR}"
-        }
     }
 }

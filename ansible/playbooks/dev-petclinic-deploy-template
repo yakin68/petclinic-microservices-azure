@@ -21,12 +21,16 @@
         --from-file=.dockerconfigjson=/home/azureuser/.docker/config.json \
         --type=kubernetes.io/dockerconfigjson
 
+      helm registry login helmchartrepo.azurecr.io \
+        --username helmchartrepo \
+        --password fo+P1uVVyyxyJL7XyZDnsgt0WuDQtZV9S16jquLNm5+ACRCbfyLm
 
-      helm registry login stablepetclinic.azurecr.io \
-        --username stablepetclinic \
-        --password LA7abcvNvfivBhqglEsAz/kEDB1b6c0Vq9/sa1nQPa+ACRDLKpRn
+      echo "5Ex1gVA1viBHtVWZqA4EoZytiB0MfyJeh0EUkSHa/B+ACRBpJld7" | docker login yakinpetclinicdockerimage.azurecr.io \
+      --username yakinpetclinicdockerimage \
+      --password-stdin
 
-      helm upgrade --install petclinicapprelease  oci://stablepetclinic.azurecr.io/petclinic/petclinic --version ${BUILD_NUMBER} --namespace petclinicdev
+      helm install petclinicapprelease  oci://helmchartrepo.azurecr.io/stable-petclinic/petclinic_chart --version ${BUILD_NUMBER} --namespace petclinicdev
+      helm get manifest petclinicapprelease
 
 
   
