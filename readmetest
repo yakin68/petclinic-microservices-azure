@@ -104,3 +104,8 @@ helm pull myregisry/ingress-nginx
 ls *.tgz
 az acr login --name $ACR_NAME
 helm push ingress-nginx-3.20.1.tgz oci://$ACR_NAME.azurecr.io/helm
+
+
+az config set core.allow_broker=true
+az account clear
+az login
