@@ -176,7 +176,7 @@ pipeline {
 
             echo "Delete existing key pair "
             sh """
-                cd ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR} 
+                cd ${WORKSPACE}/infrastructure/dev-k8s-terraform
                 rm -f ${ANS_KEYPAIR}*
                 cd ${WORKSPACE}
                 rm -f ${ANS_KEYPAIR}*
