@@ -110,3 +110,11 @@ helm push ingress-nginx-3.20.1.tgz oci://$ACR_NAME.azurecr.io/helm
                     az config set core.allow_broker=true
                     az account clear
                     az login --use-device-code
+
+ docker login $ACR_NAME.azurecr.io -u $USER_NAME  -p $PASSWORD
+ az acr login --name $ACR_REPO_NAME
+
+
+ docker push yakinpetclinicdockerimage.azurecr.io/test/spring-petclinic-api-gateway
+
+ docker tag spring-petclinic-api-gateway yakinpetclinicdockerimage.azurecr.io/test/spring-petclinic-api-gateway                    

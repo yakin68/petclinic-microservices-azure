@@ -41,18 +41,18 @@ resource "azurerm_linux_virtual_machine" "kube-master" {
 resource "azurerm_role_definition" "proje_kube_full_role" {
   name        = "masterFullAccessRole"
   description = "IAM role for full access to all resources"
-  scope       = "/subscriptions/88bbc84a-2800-40f2-b985-be5418274086"
+  scope       = "/subscriptions/563673cb-27ef-4601-a025-d26293bcde6b"
   permissions {
     actions     = ["*"]
     not_actions = []
   }
-  assignable_scopes = ["/subscriptions/88bbc84a-2800-40f2-b985-be5418274086"]
+  assignable_scopes = ["/subscriptions/563673cb-27ef-4601-a025-d26293bcde6b"]
 }
 
 resource "azurerm_role_assignment" "proje_kube_full_access_assignment" {
   principal_id         = azurerm_linux_virtual_machine.kube-master.identity[0].principal_id
   role_definition_name = azurerm_role_definition.proje_kube_full_role.name 
-  scope                = "/subscriptions/88bbc84a-2800-40f2-b985-be5418274086"
+  scope                = "/subscriptions/563673cb-27ef-4601-a025-d26293bcde6b"
 
 }
 

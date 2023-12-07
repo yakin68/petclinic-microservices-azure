@@ -15,6 +15,7 @@
 
   - name: deploy petclinic application
     shell: |
+    
       kubectl create ns petclinicdev
       kubectl delete secret regcred -n petclinicdev || true
       kubectl create secret generic regcred -n petclinicdev \

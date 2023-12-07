@@ -17,7 +17,7 @@ pipeline {
 
     }
     stages {
-        stage('Create ACR Repo') {
+        stage('Create ECR Repo') {
             steps {
                 echo "Creating ACR Repo for ${APP_NAME} app"
                 sh '''
@@ -78,41 +78,14 @@ pipeline {
                 sh 'docker image ls'
             }
         }
-        stage('Push Images to ACR Repo') {
+        stage('Push Images to ECR Repo') {
             steps {
-                echo "Pushing ${APP_NAME} App Images to ACR Repo"
+                echo "Pushing ${APP_NAME} App Images to ECR Repo"
                 sh ". ./jenkins/push-dev-docker-images-to-ecr.sh"
             }
         } 
 
-        stage('Create Key Pair for Ansible') {
-            steps {
-                echo "Creating Key Pair for ${APP_NAME} App"
-                sh '''
-                ssh-keygen -m PEM -t rsa -b 2048 -f ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR} -N ""
-                chmod 400 ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}
-                cp  ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR}* ${WORKSPACE}
-                '''
-            }
-        }        
-
-        stage('Create QA Automation Infrastructure') {
-            steps {
-                echo 'Creating QA Automation Infrastructure for Dev Environment'
-                sh """
-                    cd infrastructure/dev-k8s-terraform
-                    sed -i "s/azurkeytest.pub/${ANS_KEYPAIR}.pub/g" main-master.tf main-worker-1.tf main-worker-2.tf
-                    terraform init
-                    terraform apply -var-file="variables.tfvars" -auto-approve -no-color
-                """
-               script {
-                    echo "Kubernetes Master is not UP and running yet."
-                    sh 'az vm wait --resource-group project-kube-claster-worker --name kube-master --created'
-                }                  
-            }
-        }       
-
-        stage('Create Kubernetes Cluster for QA Automation Build') {
+         stage('Create Kubernetes Cluster for QA Automation Build') {
             steps {
                 echo "Setup Kubernetes cluster for ${APP_NAME} App"
                 sh "ansible-playbook -i ./ansible/inventory/myazuresub.azure_rm.yaml ./ansible/playbooks/k8s_setup.yaml"
@@ -125,10 +98,16 @@ pipeline {
                 sh "envsubst < k8s/petclinic_chart/values-template.yaml > k8s/petclinic_chart/values.yaml"
                 sh "sed -i s/HELM_VERSION/${BUILD_NUMBER}/ k8s/petclinic_chart/Chart.yaml"
                 sh """
-                    helm registry login ${ACR_REGISTRY_HELM} \
-                        --username ${ACR_REPO_HELM_NAME} \
-                        --password fo+P1uVVyyxyJL7XyZDnsgt0WuDQtZV9S16jquLNm5+ACRCbfyLm
+
                     helm package k8s/petclinic_chart
+
+                    USER_NAME="helmtoken"
+                    PASSWORD=$(az acr token create -n $USER_NAME -r $ACR_NAME --scope-map _repositories_admin --only-show-errors --query "credentials.passwords[0].value" -o tsv)
+                
+                    helm registry login ${ACR_REGISTRY_HELM} \
+                    --username $USER_NAME \
+                    --password $PASSWORD
+                    
                     helm push petclinic_chart-${BUILD_NUMBER}.tgz oci://${ACR_REGISTRY_HELM}/stable-petclinic
                 """    
                 sh "envsubst < ansible/playbooks/dev-petclinic-deploy-template > ansible/playbooks/dev-petclinic-deploy.yaml"
@@ -146,10 +125,9 @@ pipeline {
                     docker image prune -af
                     az acr delete --name $ACR_REPO_NAME --yes
                     az acr delete --name $ACR_REPO_HELM_NAME --yes
-                    rm -f ${ANS_KEYPAIR}*
-                    cd infrastructure/dev-k8s-terraform
-                    terraform destroy -var-file="variables.tfvars" --auto-approve -no-color
-                    rm -f ${ANS_KEYPAIR}*
+
+
+
                 """
             }
         }        
@@ -162,25 +140,12 @@ pipeline {
 
         failure {
 
-            echo 'Delete the Image Repository on ACR due to the Failure'
-            sh """
-                az acr delete --name $ACR_REPO_NAME --yes
-                az acr delete --name $ACR_REPO_HELM_NAME --yes
-            """
+            echo 'Delete the Image Repository on ECR due to the Failure'
+            sh "az acr delete --name $ACR_REPO_NAME --yes "
 
-            echo 'Deleting Terraform Stack due to the Failure'
-            sh """
-                cd infrastructure/dev-k8s-terraform
-                terraform destroy -var-file="variables.tfvars" --auto-approve -no-color
-            """
+            echo 'Delete the Image Repository on ECR due to the Failure'
+            sh "az acr delete --name $ACR_REPO_HELM_NAME --yes "
 
-            echo "Delete existing key pair "
-            sh """
-                cd ${WORKSPACE}/infrastructure/dev-k8s-terraform/${ANS_KEYPAIR} 
-                rm -f ${ANS_KEYPAIR}*
-                cd ${WORKSPACE}
-                rm -f ${ANS_KEYPAIR}*
-            """
         }
     }        
 }
